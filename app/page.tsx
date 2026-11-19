@@ -1,19 +1,51 @@
-export default function Home() {
+import type { Metadata } from "next";
+
+import HeroSection from "@/features/home/sections/HeroSection";
+import HeroFeatureTicker from "@/features/home/components/HeroFeatureTicker";
+import WhyWelvorsSection from "@/features/home/sections/WhyWelvorsSection";
+import HowItWorksSection from "@/features/home/sections/HowItWorksSection";
+import VerificationSection from "@/features/home/sections/VerificationSection";
+import SafeFaceSection from "@/features/home/sections/SafeFaceSection";
+import AICompatibilitySection from "@/features/home/sections/AICompatibilitySection";
+import DatePlansSection from "@/features/home/sections/DatePlansSection";
+import WelvorsEventsSection from "@/features/home/sections/WelvorsEventsSection";
+import StandOutSection from "@/features/home/sections/StandOutSection";
+import ForeverLoveSection from "@/features/home/sections/ForeverLoveSection";
+import SafetyPrivacySection from "@/features/home/sections/SafetyPrivacySection";
+import ReferEarnSection from "@/features/home/sections/ReferEarnSection";
+import FAQSection from "@/features/home/sections/FAQSection";
+import DownloadAppSection from "@/features/home/sections/DownloadAppSection";
+
+export const metadata: Metadata = {
+  title: "Welvors | Real People. Real Intent. Real Forever.",
+  description:
+    "Meet verified people, discover meaningful connections and experience real dates with Welvors.",
+};
+
+export default function HomePage() {
   return (
-    <section className="mx-auto max-w-[1280px] px-6 py-24">
+    <div className="min-h-screen w-full bg-[#FDFCFC]">
+      <HeroSection />
 
-      <p className="mb-6 text-sm font-semibold tracking-[3px] text-[#D0476B]">
-        SERIOUS RELATIONSHIPS · MATRIMONY
-      </p>
+      <HeroFeatureTicker />
 
-      <h1 className="max-w-[700px] font-serif text-5xl leading-[1.05] font-medium md:text-[76px]">
-        Built for people who are{" "}
-        <span className="italic text-[#D0476B]">
-          ready
-        </span>{" "}
-        for forever.
-      </h1>
+      <WhyWelvorsSection />
 
-    </section>
+      <HowItWorksSection />
+
+      <VerificationSection />
+      <SafeFaceSection />
+      <AICompatibilitySection />
+      <DatePlansSection/>
+      <WelvorsEventsSection/>
+      <StandOutSection/>
+      <ForeverLoveSection/>
+      <ReferEarnSection/>
+      <SafetyPrivacySection/>
+      <FAQSection/>
+      <DownloadAppSection/>
+      
+      
+    </div>
   );
 }

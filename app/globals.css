@@ -25,3 +25,594 @@ button {
   background: #d0476b;
   color: white;
 }
+
+/* ==========================================================
+   HERO APP PREVIEW
+   ========================================================== */
+
+.hero-app-preview {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 680px;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1.12;
+}
+
+/* ==========================================================
+   FLOATING CARD COMMON STYLING
+   ========================================================== */
+
+.hero-preview-card {
+  position: absolute;
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: max-content;
+  padding: 12px;
+
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #202020;
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* CARD TITLE */
+
+.hero-preview-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* CARD DESCRIPTION */
+
+.hero-preview-description {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #88817f;
+  white-space: nowrap;
+}
+
+/* ==========================================================
+   FLOATING CARD ICONS
+   ========================================================== */
+
+.hero-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+
+  font-size: 20px;
+  border-radius: 12px;
+}
+
+/* TRUST SCORE ICON */
+
+.hero-trust-icon {
+  border: 5px solid #279d65;
+  border-radius: 50%;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* STRONG MATCH ICON */
+
+.hero-match-icon {
+  background: linear-gradient(
+    135deg,
+    #df507a,
+    #bd315b
+  );
+
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* COFFEE AND SAFEFACE ICON */
+
+.hero-pink-icon {
+  background: #fce7ee;
+}
+
+/* COFFEE REQUEST TEXT */
+
+.hero-coffee-description {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  color: #279d65;
+  font-weight: 600;
+}
+
+/* GREEN DOT */
+
+.hero-coffee-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+
+  border-radius: 50%;
+  background: #279d65;
+}
+
+/* ==========================================================
+   DESKTOP FLOATING CARD POSITIONS
+   ========================================================== */
+
+/* TRUST SCORE */
+
+.hero-preview-trust {
+  left: 1%;
+  top: 12%;
+}
+
+/* STRONG MATCH */
+
+.hero-preview-match {
+  right: 0;
+  top: 26%;
+}
+
+/* COFFEE TONIGHT */
+
+.hero-preview-coffee {
+  left: 0;
+  bottom: 24%;
+}
+
+/* SAFEFACE */
+
+.hero-preview-safety {
+  right: 0;
+  bottom: 12%;
+}
+
+/* ==========================================================
+   HERO FLOATING CARDS ANIMATION
+   ========================================================== */
+
+@keyframes welvors-hero-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  25% {
+    transform: translate3d(0, var(--float-distance, -18px), 0);
+  }
+
+  50% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  75% {
+    transform: translate3d(0, calc(var(--float-distance, -18px) * -0.5), 0);
+  }
+}
+
+/* COMMON FLOATING ANIMATION */
+
+.welvors-floating-card {
+  --float-distance: -18px;
+
+  animation-name: welvors-hero-float;
+  animation-duration: 4s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-play-state: running;
+
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* TRUST SCORE ANIMATION */
+
+.welvors-float-trust {
+  animation-duration: 4s;
+  animation-delay: -0.5s;
+}
+
+/* STRONG MATCH ANIMATION */
+
+.welvors-float-match {
+  animation-duration: 4.5s;
+  animation-delay: -1.5s;
+}
+
+/* COFFEE TONIGHT ANIMATION */
+
+.welvors-float-coffee {
+  animation-duration: 5s;
+  animation-delay: -2.5s;
+}
+
+/* SAFEFACE ANIMATION */
+
+.welvors-float-safety {
+  animation-duration: 4.8s;
+  animation-delay: -3.5s;
+}
+
+/* ==========================================================
+   HERO FEATURE TICKER ANIMATION
+   ========================================================== */
+
+@keyframes welvors-ticker-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* TICKER OUTER CONTAINER */
+
+.welvors-ticker {
+  position: relative;
+
+  display: block;
+  width: 100%;
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border-top: 1px solid #f0eceb;
+  border-bottom: 1px solid #f0eceb;
+
+  margin-top: 16px;
+}
+
+/* TICKER MOVING TRACK */
+
+.welvors-ticker-track {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+
+  width: max-content;
+  max-width: none;
+  gap: 0;
+
+  animation: welvors-ticker-scroll 40s linear infinite;
+
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* TICKER IDENTICAL GROUPS */
+
+.welvors-ticker-group {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-around;
+
+  flex-shrink: 0;
+  width: max-content;
+  min-width: 100vw;
+}
+
+/* INDIVIDUAL FEATURE */
+
+.welvors-ticker-item {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  flex-shrink: 0;
+
+  gap: 34px;
+  padding-right: 34px;
+  height: 50px;
+
+  white-space: nowrap;
+}
+
+/* PINK STAR */
+
+.welvors-ticker-star {
+  flex-shrink: 0;
+
+  color: #d44770;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* FEATURE TEXT */
+
+.welvors-ticker-text {
+  flex-shrink: 0;
+
+  color: #625b59;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+/* ==========================================================
+   TABLET RESPONSIVE DESIGN
+   ========================================================== */
+
+@media (min-width: 640px) and (max-width: 1023px) {
+
+  .hero-app-preview {
+    max-width: 560px;
+    aspect-ratio: 1 / 1.12;
+  }
+
+  /* FLOATING CARD */
+
+  .hero-preview-card {
+    display: flex;
+    gap: 8px;
+    padding: 9px;
+    border-radius: 12px;
+  }
+
+  /* ICON */
+
+  .hero-preview-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  .hero-trust-icon {
+    border-width: 4px;
+    border-radius: 50%;
+    font-size: 12px;
+  }
+
+  .hero-match-icon {
+    font-size: 12px;
+  }
+
+  /* TEXT */
+
+  .hero-preview-title {
+    font-size: 12px;
+  }
+
+  .hero-preview-description {
+    font-size: 10px;
+  }
+
+  /* TRUST SCORE POSITION */
+
+  .hero-preview-trust {
+    left: 0;
+    top: 12%;
+  }
+
+  /* STRONG MATCH POSITION */
+
+  .hero-preview-match {
+    right: 0;
+    top: 27%;
+  }
+
+  /* COFFEE TONIGHT POSITION */
+
+  .hero-preview-coffee {
+    left: 0;
+    bottom: 25%;
+  }
+
+  /* SAFEFACE POSITION */
+
+  .hero-preview-safety {
+    right: 0;
+    bottom: 10%;
+  }
+
+  /* TABLET FLOATING ANIMATION */
+
+  .welvors-floating-card {
+    --float-distance: -14px;
+  }
+
+  /* TABLET TICKER */
+
+  .welvors-ticker-track {
+    animation-duration: 35s;
+  }
+}
+
+/* ==========================================================
+   MOBILE RESPONSIVE DESIGN
+   ========================================================== */
+
+@media (max-width: 639px) {
+
+  .hero-app-preview {
+    max-width: 440px;
+    aspect-ratio: 1 / 1.15;
+  }
+
+  /* FLOATING CARD */
+
+  .hero-preview-card {
+    display: flex;
+    gap: 5px;
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  /* ICON */
+
+  .hero-preview-icon {
+    width: 27px;
+    height: 27px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  .hero-trust-icon {
+    border-width: 3px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+
+  .hero-match-icon {
+    font-size: 10px;
+  }
+
+  /* TEXT */
+
+  .hero-preview-title {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .hero-preview-description {
+    margin-top: 2px;
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .hero-coffee-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  /* TRUST SCORE POSITION */
+
+  .hero-preview-trust {
+    left: 0;
+    top: 12%;
+  }
+
+  /* STRONG MATCH POSITION */
+
+  .hero-preview-match {
+    right: 0;
+    top: 31%;
+  }
+
+  /* COFFEE TONIGHT POSITION */
+
+  .hero-preview-coffee {
+    left: 0;
+    bottom: 27%;
+  }
+
+  /* SAFEFACE POSITION */
+
+  .hero-preview-safety {
+    right: 0;
+    bottom: 10%;
+  }
+
+  /* MOBILE FLOATING ANIMATION */
+
+  .welvors-floating-card {
+    --float-distance: -10px;
+  }
+
+  /* MOBILE TICKER */
+
+  .welvors-ticker-track {
+    animation-duration: 30s;
+  }
+
+  .welvors-ticker-item {
+    gap: 24px;
+    padding-right: 24px;
+    height: 44px;
+  }
+
+  .welvors-ticker-text {
+    font-size: 12px;
+  }
+
+  .welvors-ticker-star {
+    font-size: 14px;
+  }
+}
+
+/* ==========================================================
+   EXTRA SMALL MOBILE RESPONSIVE DESIGN
+   ========================================================== */
+
+@media (max-width: 374px) {
+
+  .hero-preview-card {
+    padding: 5px;
+    gap: 4px;
+    border-radius: 8px;
+  }
+
+  .hero-preview-icon {
+    width: 23px;
+    height: 23px;
+    font-size: 12px;
+  }
+
+  .hero-trust-icon {
+    font-size: 9px;
+    border-radius: 50%;
+  }
+
+  .hero-match-icon {
+    font-size: 9px;
+  }
+
+  .hero-preview-title {
+    font-size: 9px;
+  }
+
+  .hero-preview-description {
+    font-size: 7px;
+  }
+
+  /* SMALL MOBILE FLOATING ANIMATION */
+
+  .welvors-floating-card {
+    --float-distance: -8px;
+  }
+}
+
+/* ==========================================================
+   ACCESSIBILITY - REDUCED MOTION
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .welvors-floating-card,
+  .welvors-ticker-track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .welvors-ticker {
+    overflow-x: auto;
+  }
+
+  .welvors-ticker-group[aria-hidden="true"] {
+    display: none;
+  }
+}
