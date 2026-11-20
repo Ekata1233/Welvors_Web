@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* ==========================================================
    VERIFICATION DATA
@@ -62,6 +62,14 @@ const TRUST_FEATURES = [
 ];
 
 /* ==========================================================
+   ANIMATION CONFIGURATION
+   ========================================================== */
+
+const INITIAL_DELAY = 1200;
+const NEXT_CHECK_DELAY = 700;
+const CHECK_DURATION = 1900;
+
+/* ==========================================================
    VERIFICATION SECTION
    ========================================================== */
 
@@ -70,24 +78,154 @@ export default function VerificationSection() {
     string[]
   >([]);
 
+  const [checkingId, setCheckingId] = useState<
+    string | null
+  >(null);
+
+  const [checkingProgress, setCheckingProgress] =
+    useState(0);
+
+  const [isVisible, setIsVisible] = useState(false);
+
+  const [animationStarted, setAnimationStarted] =
+    useState(false);
+
+  const sectionRef = useRef<HTMLElement | null>(null);
+
   const completedChecks = 2 + verifiedChecks.length;
-
   const remainingChecks = 5 - completedChecks;
-
   const isFullyVerified = completedChecks === 5;
-
   const progress = (completedChecks / 5) * 100;
 
-  const handleVerify = (id: string) => {
-    setVerifiedChecks((previous) =>
-      previous.includes(id)
-        ? previous
-        : [...previous, id]
+  /* ==========================================================
+     OBSERVE SECTION VISIBILITY
+     ========================================================== */
+
+  useEffect(() => {
+    const section = sectionRef.current;
+
+    if (!section) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      {
+        threshold: 0.2,
+      }
     );
+
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, []);
+
+  /* ==========================================================
+     AUTOMATIC SEQUENTIAL VERIFICATION
+     ========================================================== */
+
+  useEffect(() => {
+    if (!isVisible || isFullyVerified || checkingId) {
+      return;
+    }
+
+    const nextCheck = VERIFICATION_CHECKS.find(
+      (item) => !verifiedChecks.includes(item.id)
+    );
+
+    if (!nextCheck) return;
+
+    const timer = window.setTimeout(
+      () => {
+        setAnimationStarted(true);
+        setCheckingProgress(0);
+        setCheckingId(nextCheck.id);
+      },
+      animationStarted
+        ? NEXT_CHECK_DELAY
+        : INITIAL_DELAY
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [
+    isVisible,
+    isFullyVerified,
+    checkingId,
+    verifiedChecks,
+    animationStarted,
+  ]);
+
+  /* ==========================================================
+     CHECKING ANIMATION
+     ========================================================== */
+
+  useEffect(() => {
+    if (!checkingId) return;
+
+    let animationFrame = 0;
+    let startTime: number | null = null;
+
+    const animate = (timestamp: number) => {
+      if (startTime === null) {
+        startTime = timestamp;
+      }
+
+      const elapsed = timestamp - startTime;
+
+      const percentage = Math.min(
+        (elapsed / CHECK_DURATION) * 100,
+        100
+      );
+
+      setCheckingProgress(percentage);
+
+      if (percentage < 100) {
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        const finishedId = checkingId;
+
+        setVerifiedChecks((previous) =>
+          previous.includes(finishedId)
+            ? previous
+            : [...previous, finishedId]
+        );
+
+        setCheckingId(null);
+        setCheckingProgress(0);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [checkingId]);
+
+  /* ==========================================================
+     MANUAL VERIFICATION
+     ========================================================== */
+
+  const handleVerify = (id: string) => {
+    if (
+      checkingId ||
+      verifiedChecks.includes(id)
+    ) {
+      return;
+    }
+
+    setAnimationStarted(true);
+    setCheckingProgress(0);
+    setCheckingId(id);
   };
+
+  /* ==========================================================
+     RENDER
+     ========================================================== */
 
   return (
     <section
+      ref={sectionRef}
       id="verification"
       className="w-full bg-white py-14 sm:py-16 lg:py-20"
     >
@@ -98,170 +236,146 @@ export default function VerificationSection() {
             ================================================== */}
 
         <div className="mb-8 lg:mb-10">
-          <p className="mb-3 text-[12px] font-semibold uppercase tracking-[2px] text-[#cb4064]">
+
+          <p className="mb-3 text-[12px] font-semibold uppercase tracking-[2px] text-[#b92e59]">
             Verification & Trust Score
           </p>
 
           <h2
             className="text-[36px] leading-[1.12] tracking-[-1px] text-[#201c1d] sm:text-[44px] lg:text-[50px]"
-            style={{ fontFamily: "Georgia, serif" }}
+            style={{
+              fontFamily: "Georgia, serif",
+            }}
           >
             Know them{" "}
-            <span className="italic text-[#d0476b]">
+            <span className="italic text-[#c93e6c]">
               before
             </span>{" "}
             you say hi.
           </h2>
 
-          <p className="mt-4 max-w-[620px] text-[16px] leading-[1.65] text-[#716b68] sm:text-[18px]">
-            Every member is verified before they can match.
-            Their Trust Score shows exactly what&apos;s been
-            checked.
+          <p className="mt-4 max-w-[650px] text-[16px] leading-[1.7] text-[#716b68] sm:text-[18px]">
+            No verification, no matches. Every profile
+            shows what&apos;s been checked.
           </p>
+
         </div>
 
         {/* ==================================================
-            MAIN CONTENT
+            FULL WIDTH VERIFICATION CARD
             ================================================== */}
 
-        <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[0.82fr_1fr] lg:gap-12">
+        <div className="w-full rounded-[26px] border border-[#eae4e1] bg-white p-4 shadow-[0_12px_38px_rgba(35,20,25,0.07)] sm:p-6 lg:p-7">
 
           {/* ==================================================
-              LEFT MOBILE MOCKUP
+              PROGRESS HEADER
               ================================================== */}
 
-          <div className="relative mx-auto flex h-[450px] w-full max-w-[480px] items-center justify-center sm:h-[550px] lg:h-[620px]">
+          <div className="flex items-center gap-4 border-b border-[#eee9e6] pb-5 sm:gap-5">
 
-            {/* BACKGROUND GLOW */}
+            {/* CIRCULAR PROGRESS */}
 
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[75%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#b6a2a7]/20 blur-[60px]" />
+            <div className="relative flex h-[76px] w-[76px] shrink-0 items-center justify-center sm:h-[90px] sm:w-[90px]">
 
-            {/* PHONE IMAGE */}
+              <svg
+                viewBox="0 0 100 100"
+                className="absolute inset-0 h-full w-full -rotate-90"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  fill="none"
+                  stroke="#eae5e1"
+                  strokeWidth="9"
+                />
 
-            <img
-              src="https://ik.imagekit.io/r0vb3de74/verify.png"
-              alt="Welvors Trust Score verification screen"
-              draggable={false}
-              className="relative z-10 block h-[90%] w-auto max-w-[85%] select-none object-contain drop-shadow-[0_25px_35px_rgba(55,35,40,0.22)]"
-            />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  fill="none"
+                  stroke="#2fa66a"
+                  strokeWidth="9"
+                  pathLength="100"
+                  strokeDasharray="100"
+                  strokeDashoffset={100 - progress}
+                  className="transition-all duration-700 ease-in-out"
+                />
+              </svg>
 
-            {/* ANIMATED VERIFIED BADGE */}
+              <div className="relative text-center">
 
-            <div className="verification-floating-badge absolute bottom-[17%] left-0 z-20 flex items-center gap-2.5 rounded-[16px] border border-[#eee8e5] bg-white px-3 py-2.5 shadow-[0_8px_25px_rgba(40,20,25,0.10)] sm:left-[2%] sm:gap-3 sm:px-4 sm:py-3">
-
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#397ff5] text-[19px] font-semibold text-white">
-                ✓
-              </div>
-
-              <div>
-                <p className="text-[12px] font-bold leading-tight text-[#252122] sm:text-[14px]">
-                  Verified badge
+                <p
+                  key={completedChecks}
+                  className="verification-count-pop text-[23px] font-bold leading-none text-[#201d1e] sm:text-[25px]"
+                >
+                  {completedChecks}/5
                 </p>
 
-                <p className="mt-0.5 whitespace-nowrap text-[10px] text-[#928b87] sm:text-[12px]">
-                  Shown on every profile
+                <p className="mt-1 text-[11px] text-[#918985]">
+                  checks
                 </p>
-              </div>
 
+              </div>
+            </div>
+
+            {/* PROGRESS DETAILS */}
+
+            <div
+              className="min-w-0 flex-1"
+              aria-live="polite"
+            >
+
+              <span
+                className={`inline-flex rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.6px] transition-all duration-500 ${
+                  isFullyVerified
+                    ? "bg-[#e3f5eb] text-[#218653]"
+                    : "bg-[#f4f1ef] text-[#746d69]"
+                }`}
+              >
+                {isFullyVerified
+                  ? "VERIFIED"
+                  : "BASIC"}
+              </span>
+
+              <h3 className="mt-2 text-[15px] font-bold leading-snug text-[#211e1f] sm:text-[18px]">
+
+                {isFullyVerified
+                  ? "You're fully verified!"
+                  : `Finish ${remainingChecks} quick ${
+                      remainingChecks === 1
+                        ? "check"
+                        : "checks"
+                    } to get verified`}
+
+              </h3>
+
+              <p className="mt-1.5 text-[12px] text-[#948c88] sm:text-[14px]">
+
+                {isFullyVerified
+                  ? "All 5 verification checks completed."
+                  : "Watch it verify, or tap Verify"}
+
+              </p>
             </div>
           </div>
 
           {/* ==================================================
-              RIGHT VERIFICATION CARD
+              VERIFICATION TIERS
               ================================================== */}
 
-          <div className="rounded-[26px] border border-[#ede8e5] bg-white p-4 shadow-[0_10px_35px_rgba(35,20,25,0.06)] sm:p-6">
-
-            {/* PROGRESS HEADER */}
-
-            <div className="flex items-center gap-4 border-b border-[#f0ece9] pb-5 sm:gap-5">
-
-              {/* CIRCULAR PROGRESS */}
-
-              <div className="relative flex h-[76px] w-[76px] shrink-0 items-center justify-center sm:h-[90px] sm:w-[90px]">
-
-                <svg
-                  viewBox="0 0 100 100"
-                  className="absolute inset-0 h-full w-full -rotate-90"
-                  aria-hidden="true"
-                >
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="44"
-                    fill="none"
-                    stroke="#eae5e1"
-                    strokeWidth="9"
-                  />
-
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="44"
-                    fill="none"
-                    stroke="#269764"
-                    strokeWidth="9"
-                    pathLength="100"
-                    strokeDasharray="100"
-                    strokeDashoffset={100 - progress}
-                    className="transition-all duration-700 ease-out"
-                  />
-                </svg>
-
-                <div className="relative text-center">
-                  <p className="text-[23px] font-bold leading-none text-[#201d1e]">
-                    {completedChecks}/5
-                  </p>
-
-                  <p className="mt-1 text-[11px] text-[#918985]">
-                    checks
-                  </p>
-                </div>
-
-              </div>
-
-              {/* PROGRESS TEXT */}
-
-              <div
-                className="min-w-0"
-                aria-live="polite"
-              >
-                <span
-                  className={`inline-flex rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.6px] ${
-                    isFullyVerified
-                      ? "bg-[#e3f5eb] text-[#218653]"
-                      : "bg-[#f4f1ef] text-[#746d69]"
-                  }`}
-                >
-                  {isFullyVerified ? "VERIFIED" : "BASIC"}
-                </span>
-
-                <h3 className="mt-2 text-[15px] font-bold leading-snug text-[#211e1f] sm:text-[18px]">
-                  {isFullyVerified
-                    ? "You're fully verified!"
-                    : `Finish ${remainingChecks} quick ${
-                        remainingChecks === 1
-                          ? "check"
-                          : "checks"
-                      } to get verified`}
-                </h3>
-
-                <p className="mt-1.5 text-[12px] text-[#948c88] sm:text-[14px]">
-                  {isFullyVerified
-                    ? "All 5 verification checks completed."
-                    : "Try it: tap Verify on each check"}
-                </p>
-              </div>
-
-            </div>
+          <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:gap-7">
 
             {/* ==================================================
-                TIER 1 — BASIC
+                LEFT COLUMN — TIER 1 BASIC
                 ================================================== */}
 
-            <div className="mt-5">
+            <div className="min-w-0">
 
-              <div className="mb-2.5 flex items-center justify-between gap-2">
+              <div className="mb-3 flex items-center justify-between gap-2">
+
                 <h4 className="text-[12px] font-bold uppercase tracking-[0.3px] text-[#272324] sm:text-[13px]">
                   Tier 1 · Basic
                 </h4>
@@ -271,43 +385,49 @@ export default function VerificationSection() {
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
 
                 {BASIC_CHECKS.map((item) => (
                   <div
                     key={item.id}
-                    className="flex min-h-[72px] items-center gap-3 rounded-[16px] border border-[#d5eee0] bg-[#f2faf5] px-3 py-3 sm:gap-4 sm:px-4"
+                    className="flex min-h-[66px] items-center gap-3 rounded-[16px] border border-[#d5eee0] bg-[#f2faf5] px-3 py-3 sm:gap-4 sm:px-4"
                   >
+
+                    {/* ICON */}
+
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5f2ef] text-[19px]">
                       {item.icon}
                     </div>
 
+                    {/* TITLE */}
+
                     <div className="min-w-0 flex-1">
+
                       <h5 className="text-[13px] font-bold text-[#242122] sm:text-[15px]">
                         {item.title}
                       </h5>
 
-                      <p className="mt-1 text-[11px] leading-relaxed text-[#928b87] sm:text-[13px]">
-                        {item.description}
-                      </p>
                     </div>
+
+                    {/* DONE */}
 
                     <span className="shrink-0 rounded-full bg-[#dff2e7] px-3 py-2 text-[11px] font-semibold text-[#218452] sm:text-[12px]">
                       ✓ Done
                     </span>
+
                   </div>
                 ))}
-
               </div>
             </div>
 
             {/* ==================================================
-                TIER 2 — VERIFIED
+                RIGHT COLUMN — TIER 2 VERIFIED
                 ================================================== */}
 
-            <div className="mt-5">
+            <div className="min-w-0">
 
-              <div className="mb-2.5 flex items-center justify-between gap-2">
+              <div className="mb-3 flex items-center justify-between gap-2">
+
                 <h4 className="text-[12px] font-bold uppercase tracking-[0.3px] text-[#272324] sm:text-[13px]">
                   Tier 2 · Verified
                 </h4>
@@ -317,59 +437,96 @@ export default function VerificationSection() {
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
 
                 {VERIFICATION_CHECKS.map((item) => {
                   const isVerified =
                     verifiedChecks.includes(item.id);
 
+                  const isChecking =
+                    checkingId === item.id;
+
                   return (
                     <div
                       key={item.id}
-                      className={`flex min-h-[72px] items-center gap-3 rounded-[16px] border px-3 py-3 transition-all duration-300 sm:gap-4 sm:px-4 ${
+                      className={`relative flex min-h-[66px] items-center gap-3 overflow-hidden rounded-[16px] border px-3 py-3 transition-colors duration-500 sm:gap-4 sm:px-4 ${
                         isVerified
                           ? "border-[#d5eee0] bg-[#f2faf5]"
+                          : isChecking
+                          ? "border-[#dcebe0] bg-white"
                           : "border-[#eee9e6] bg-white hover:border-[#f2b8c8]"
                       }`}
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5f2ef] text-[19px]">
+
+                      {/* ==================================
+                          ANIMATED GREEN PROGRESS FILL
+                          ================================== */}
+
+                      {isChecking && (
+                        <div
+                          className="pointer-events-none absolute inset-y-0 left-0 z-0 bg-gradient-to-r from-[#e0f3e7] via-[#eaf7ee] to-[#f2faf5]"
+                          style={{
+                            width: `${checkingProgress}%`,
+                          }}
+                        />
+                      )}
+
+                      {/* ICON */}
+
+                      <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5f2ef] text-[19px]">
                         {item.icon}
                       </div>
 
-                      <div className="min-w-0 flex-1">
+                      {/* TITLE */}
+
+                      <div className="relative z-10 min-w-0 flex-1">
 
                         <h5 className="text-[13px] font-bold text-[#242122] sm:text-[15px]">
                           {item.title}
                         </h5>
 
-                        <p className="mt-1 text-[11px] leading-relaxed text-[#928b87] sm:text-[13px]">
-                          {item.description}
-                        </p>
-
                       </div>
 
-                      {isVerified ? (
-                        <span className="shrink-0 rounded-full bg-[#dff2e7] px-3 py-2 text-[11px] font-semibold text-[#218452] sm:text-[12px]">
-                          ✓ Done
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleVerify(item.id)}
-                          aria-label={`Demo: verify ${item.title}`}
-                          className="shrink-0 cursor-pointer rounded-full bg-[#d0476b] px-4 py-2.5 text-[12px] font-semibold text-white transition-colors duration-200 hover:bg-[#b93257] active:scale-95 sm:px-5 sm:text-[13px]"
-                        >
-                          Verify
-                        </button>
-                      )}
+                      {/* STATUS */}
 
+                      <div className="relative z-10 shrink-0">
+
+                        {isVerified ? (
+
+                          <span className="verification-done-pop inline-flex items-center rounded-full bg-[#dff2e7] px-3 py-2 text-[11px] font-semibold text-[#218452] sm:text-[12px]">
+                            ✓ Done
+                          </span>
+
+                        ) : isChecking ? (
+
+                          <span className="inline-flex items-center gap-2 rounded-full bg-[#242122] px-3 py-2.5 text-[11px] font-semibold text-white sm:px-4 sm:text-[12px]">
+
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+
+                            Checking
+                          </span>
+
+                        ) : (
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleVerify(item.id)
+                            }
+                            disabled={checkingId !== null}
+                            aria-label={`Demo: verify ${item.title}`}
+                            className="min-w-[78px] cursor-pointer rounded-full bg-[#c93e6c] px-4 py-2.5 text-[12px] font-semibold text-white transition-all duration-200 hover:bg-[#b93257] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[100px] sm:px-5 sm:text-[13px]"
+                          >
+                            Verify
+                          </button>
+
+                        )}
+                      </div>
                     </div>
                   );
                 })}
-
               </div>
             </div>
-
           </div>
         </div>
 
@@ -384,11 +541,13 @@ export default function VerificationSection() {
               key={item.title}
               className="flex items-center gap-3 rounded-[20px] bg-[#f5f2ef] px-4 py-4 transition-colors duration-300 hover:bg-[#fce7ed] sm:px-3 lg:gap-4 lg:px-5 lg:py-5"
             >
+
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-white text-[21px]">
                 {item.icon}
               </div>
 
               <div className="min-w-0">
+
                 <h4 className="text-[13px] font-bold leading-snug text-[#252122] lg:text-[15px]">
                   {item.title}
                 </h4>
@@ -396,58 +555,75 @@ export default function VerificationSection() {
                 <p className="mt-1 text-[11px] leading-relaxed text-[#928b87] lg:text-[13px]">
                   {item.description}
                 </p>
-              </div>
 
+              </div>
             </div>
           ))}
-
         </div>
-
       </div>
 
       {/* ==================================================
-          INTERNAL CSS — FLOATING BADGE ANIMATION
+          INTERNAL ANIMATION CSS
           ================================================== */}
 
       <style jsx>{`
-        @keyframes verificationBadgeFloat {
-          0%,
+
+        /* PROGRESS COUNT POP */
+
+        @keyframes verificationCountPop {
+          0% {
+            opacity: 0.5;
+            transform: scale(0.82);
+          }
+
+          65% {
+            opacity: 1;
+            transform: scale(1.12);
+          }
+
           100% {
-            transform: translateY(0);
-          }
-
-          50% {
-            transform: translateY(-16px);
+            opacity: 1;
+            transform: scale(1);
           }
         }
 
-        .verification-floating-badge {
-          animation: verificationBadgeFloat 3.8s
-            ease-in-out infinite;
-          will-change: transform;
+        .verification-count-pop {
+          animation: verificationCountPop 0.45s ease-out;
         }
 
-        @media (max-width: 640px) {
-          @keyframes verificationBadgeFloat {
-            0%,
-            100% {
-              transform: translateY(0);
-            }
+        /* DONE BADGE POP */
 
-            50% {
-              transform: translateY(-10px);
-            }
+        @keyframes verificationDonePop {
+          0% {
+            opacity: 0;
+            transform: scale(0.75);
+          }
+
+          65% {
+            opacity: 1;
+            transform: scale(1.08);
+          }
+
+          100% {
+            opacity: 1;
+            transform: scale(1);
           }
         }
+
+        .verification-done-pop {
+          animation: verificationDonePop 0.4s ease-out;
+        }
+
+        /* REDUCED MOTION */
 
         @media (prefers-reduced-motion: reduce) {
-          .verification-floating-badge {
+          .verification-count-pop,
+          .verification-done-pop {
             animation: none;
-            will-change: auto;
           }
         }
-      `}</style>
 
+      `}</style>
     </section>
   );
 }

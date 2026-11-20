@@ -35,13 +35,13 @@ export default function HomePage() {
 
       <VerificationSection />
       <SafeFaceSection />
-      <AICompatibilitySection />
+      {/* <AICompatibilitySection /> */}
       <DatePlansSection/>
       <WelvorsEventsSection/>
       <StandOutSection/>
       <ForeverLoveSection/>
       <ReferEarnSection/>
-      <SafetyPrivacySection/>
+      {/* <SafetyPrivacySection/> */}
       <FAQSection/>
       <DownloadAppSection/>
       

@@ -106,32 +106,7 @@ export default function WhyWelvorsSection() {
             FEATURE COMPARISON CARDS
             ================================================== */}
 
-        <div
-          className="
-            mt-5
-            grid
-            grid-cols-1
-            gap-3
-            sm:grid-cols-2
-            lg:grid-cols-3
-          "
-        >
-          {WHY_WELVORS_FEATURES.map((feature) => (
-            <WhyWelvorsCard
-              key={feature.category}
-              feature={feature}
-            />
-          ))}
-        </div>
-
-        {/* ==================================================
-            DOWNLOAD APP BANNER
-            ================================================== */}
-
-        <WhyWelvorsDownload
-          appStoreUrl="https://www.apple.com/app-store/"
-          googlePlayUrl="https://play.google.com/store"
-        />
+      
 
       </div>
     </section>
