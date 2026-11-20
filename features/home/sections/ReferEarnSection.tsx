@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -9,15 +10,22 @@ import ReferralRewardVisual from "../components/ReferralRewardVisual";
 
 const REFERRAL_CODE = "WELVORS350";
 
+// Replace this with your actual referral URL when available.
+const REFERRAL_BASE_URL = "https://welvors.com/refer";
+
 const JOIN_REWARD = 50;
 const PLAN_REWARD = 300;
 const TOTAL_REWARD = JOIN_REWARD + PLAN_REWARD;
+
+/* ==========================================================
+   REFERRAL STEPS
+   ========================================================== */
 
 const REFERRAL_STEPS = [
   {
     id: 1,
     title: "Share your code",
-    description: "WhatsApp, Instagram or SMS",
+    description: "Instagram, Facebook or LinkedIn",
     reward: null,
   },
   {
@@ -34,21 +42,31 @@ const REFERRAL_STEPS = [
   },
 ];
 
-const SHARE_OPTIONS = [
-  {
-    name: "WhatsApp",
-    background: "#def5e7",
-    color: "#19ce68",
-  },
+/* ==========================================================
+   SOCIAL SHARE OPTIONS
+   ========================================================== */
+
+type SharePlatform = "Instagram" | "Facebook" | "LinkedIn";
+
+const SHARE_OPTIONS: {
+  name: SharePlatform;
+  background: string;
+  color: string;
+}[] = [
   {
     name: "Instagram",
     background: "#f9e0e8",
     color: "#e72968",
   },
   {
-    name: "SMS",
+    name: "Facebook",
     background: "#e5edfc",
-    color: "#5686ee",
+    color: "#1877F2",
+  },
+  {
+    name: "LinkedIn",
+    background: "#e3f1fa",
+    color: "#0A66C2",
   },
 ];
 
@@ -87,48 +105,57 @@ export default function ReferEarnSection() {
      SOCIAL SHARING
      ======================================================== */
 
-/* ========================================================
-   SOCIAL SHARING
-   ======================================================== */
+  const handleShare = async (platform: SharePlatform) => {
+    const referralUrl =
+      `${REFERRAL_BASE_URL}/${encodeURIComponent(REFERRAL_CODE)}`;
 
-const handleShare = async (platform: string) => {
-  const message = `Join Welvors and use my referral code ${REFERRAL_CODE}.`;
+    const message =
+      `Join Welvors and use my referral code ${REFERRAL_CODE}.\n${referralUrl}`;
 
-  const encodedMessage = encodeURIComponent(message);
+    // Facebook
+    if (platform === "Facebook") {
+      const facebookUrl =
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralUrl)}`;
 
-  // WhatsApp
-  if (platform === "WhatsApp") {
-    window.open(
-      `https://wa.me/?text=${encodedMessage}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+      window.open(
+        facebookUrl,
+        "_blank",
+        "noopener,noreferrer",
+      );
 
-    return;
-  }
-
-  // SMS
-  if (platform === "SMS") {
-    window.location.assign(`sms:?body=${encodedMessage}`);
-
-    return;
-  }
-
-  // Instagram
-  if (platform === "Instagram") {
-    try {
-      await navigator.clipboard.writeText(message);
-
-      setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch {
-      setCopied(false);
+      return;
     }
-  }
-};
+
+    // LinkedIn
+    if (platform === "LinkedIn") {
+      const linkedInUrl =
+        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralUrl)}`;
+
+      window.open(
+        linkedInUrl,
+        "_blank",
+        "noopener,noreferrer",
+      );
+
+      return;
+    }
+
+    // Instagram does not support direct web-link sharing.
+    // Copy the referral message for manual sharing.
+    if (platform === "Instagram") {
+      try {
+        await navigator.clipboard.writeText(message);
+
+        setCopied(true);
+
+        setTimeout(() => {
+          setCopied(false);
+        }, 2000);
+      } catch {
+        setCopied(false);
+      }
+    }
+  };
 
   return (
     <section
@@ -136,22 +163,17 @@ const handleShare = async (platform: string) => {
       className="w-full bg-white py-12 sm:py-16 lg:py-[64px]"
     >
       <div className="mx-auto w-full max-w-[1280px] px-5 sm:px-8 lg:px-10">
-
-        {/* ==================================================
-            SECTION HEADING
-            ================================================== */}
+        {/* SECTION HEADING */}
 
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[1.8px] text-[#c83258]">
-            Refer & Earn
+            Refer &amp; Earn
           </p>
 
           <h2 className="mt-4 font-serif text-[36px] font-semibold leading-[1.08] tracking-[-1px] text-[#1c1818] sm:text-[44px] lg:text-[52px]">
             Bring your single
-            <br className="hidden sm:block" />
-
-            {" "}friends.{" "}
-
+            <br className="hidden sm:block" />{" "}
+            friends.{" "}
             <span className="italic text-[#d4476c]">
               Earn ₹350 each.
             </span>
@@ -162,22 +184,12 @@ const handleShare = async (platform: string) => {
           </p>
         </div>
 
-        {/* ==================================================
-            MAIN REFERRAL CARD
-            ================================================== */}
+        {/* MAIN REFERRAL CARD */}
 
-        <div
-          className="mt-9 grid grid-cols-1 overflow-hidden rounded-[26px] border border-[#eae3df] shadow-[0_12px_40px_rgba(38,22,25,0.07)] lg:mt-10 lg:grid-cols-2"
-        >
+        <div className="mt-9 grid grid-cols-1 overflow-hidden rounded-[26px] border border-[#eae3df] shadow-[0_12px_40px_rgba(38,22,25,0.07)] lg:mt-10 lg:grid-cols-2">
+          {/* LEFT PANEL */}
 
-          {/* ================================================
-              LEFT PANEL
-              ================================================ */}
-
-          <div
-            className="bg-[radial-gradient(ellipse_at_top_left,#faedf0_0%,#ffffff_55%)] p-5 sm:p-8 lg:p-12"
-          >
-
+          <div className="bg-[radial-gradient(ellipse_at_top_left,#faedf0_0%,#ffffff_55%)] p-5 sm:p-8 lg:p-12">
             {/* REFERRAL CODE BOX */}
 
             <button
@@ -185,16 +197,12 @@ const handleShare = async (platform: string) => {
               onClick={copyCode}
               className="flex w-full cursor-pointer items-center gap-3 rounded-[18px] border-2 border-dashed border-[#ed5279] bg-white/80 px-4 py-5 text-left transition-colors hover:bg-[#fff9fa] sm:gap-4 sm:px-5 sm:py-6"
             >
-              <span
-                className="shrink-0 rounded-[10px] bg-[#d4476c] px-3 py-3 text-[10px] font-bold tracking-[0.7px] text-white sm:text-[12px]"
-              >
+              <span className="shrink-0 rounded-[10px] bg-[#d4476c] px-3 py-3 text-[10px] font-bold tracking-[0.7px] text-white sm:text-[12px]">
                 YOUR CODE
               </span>
 
               <div className="min-w-0">
-                <h3
-                  className="break-words font-serif text-[22px] font-bold tracking-[0.8px] text-[#211b1b] sm:text-[29px]"
-                >
+                <h3 className="break-words font-serif text-[22px] font-bold tracking-[0.8px] text-[#211b1b] sm:text-[29px]">
                   {REFERRAL_CODE}
                 </h3>
 
@@ -234,16 +242,15 @@ const handleShare = async (platform: string) => {
                 </button>
               ))}
             </div>
-            {/* NEW REFERRAL ILLUSTRATION */}
-<ReferralRewardVisual />
+
+            {/* REFERRAL ILLUSTRATION */}
+
+            <ReferralRewardVisual />
           </div>
 
-          {/* ================================================
-              RIGHT PANEL
-              ================================================ */}
+          {/* RIGHT PANEL */}
 
           <div className="bg-[#1c1717] p-5 text-white sm:p-8 lg:p-[42px]">
-
             {/* TOTAL REWARD */}
 
             <div className="flex items-end justify-between gap-3">
@@ -274,23 +281,18 @@ const handleShare = async (platform: string) => {
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[#c9c0c0] sm:text-[13px]">
               <div className="flex items-center gap-2">
                 <span className="h-[10px] w-[10px] rounded-[3px] bg-[#f69ab3]" />
-
                 ₹50 when they join
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="h-[10px] w-[10px] rounded-[3px] bg-[#51c18b]" />
-
                 ₹300 when they buy a plan
               </div>
             </div>
 
-            {/* ==============================================
-                REFERRAL TIMELINE
-                ============================================== */}
+            {/* REFERRAL TIMELINE */}
 
             <div className="relative mt-9">
-
               {/* VERTICAL CONNECTING LINE */}
 
               <div className="absolute bottom-[30px] left-[16px] top-[20px] w-[2px] bg-white/15" />
@@ -301,7 +303,6 @@ const handleShare = async (platform: string) => {
                     key={step.id}
                     className="flex items-center gap-4"
                   >
-
                     {/* STEP NUMBER */}
 
                     <div className="relative z-10 flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-white text-[14px] font-semibold text-[#211b1b]">
@@ -324,19 +325,11 @@ const handleShare = async (platform: string) => {
 
                     {step.reward !== null && (
                       <span
-                        className={`
-                          shrink-0
-                          rounded-full
-                          px-3
-                          py-2
-                          text-[13px]
-                          font-semibold
-                          ${
-                            step.reward === JOIN_REWARD
-                              ? "bg-[#f69ab3]/10 text-[#f69ab3]"
-                              : "bg-[#51c18b]/15 text-[#51c18b]"
-                          }
-                        `}
+                        className={`shrink-0 rounded-full px-3 py-2 text-[13px] font-semibold ${
+                          step.reward === JOIN_REWARD
+                            ? "bg-[#f69ab3]/10 text-[#f69ab3]"
+                            : "bg-[#51c18b]/15 text-[#51c18b]"
+                        }`}
                       >
                         +₹{step.reward}
                       </span>
@@ -346,21 +339,16 @@ const handleShare = async (platform: string) => {
               </div>
             </div>
 
-            {/* ==============================================
-                INTERACTIVE EARNINGS CALCULATOR
-                ============================================== */}
+            {/* INTERACTIVE EARNINGS CALCULATOR */}
 
             <div className="mt-9 rounded-[18px] border border-white/10 bg-white/[0.055] p-4 sm:p-5">
-
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[13px] text-[#d9d0d0] sm:text-[14px]">
                   If{" "}
-
                   <span className="font-bold text-white">
                     {friends}
-                  </span>
-
-                  {" "}friends join and buy a plan
+                  </span>{" "}
+                  friends join and buy a plan
                 </p>
 
                 <p className="font-serif text-[30px] font-semibold leading-none text-[#51c18b] sm:text-[34px]">
@@ -370,27 +358,24 @@ const handleShare = async (platform: string) => {
 
               {/* RANGE SLIDER */}
 
-             <input
-  type="range"
-  min={1}
-  max={20}
-  step={1}
-  value={friends}
-  aria-label="Number of referred friends"
-  onChange={(event) =>
-    setFriends(Number(event.target.value))
-  }
-  className="mt-5 block h-2 w-full cursor-pointer accent-[#f69ab3]"
-/>
-
+              <input
+                type="range"
+                min={1}
+                max={20}
+                step={1}
+                value={friends}
+                aria-label="Number of referred friends"
+                onChange={(event) =>
+                  setFriends(Number(event.target.value))
+                }
+                className="referral-range mt-5 block w-full cursor-pointer accent-[#f69ab3]"
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* ====================================================
-          INTERNAL CSS
-          ==================================================== */}
+      {/* INTERNAL CSS */}
 
       <style jsx>{`
         .referral-range {
@@ -401,6 +386,7 @@ const handleShare = async (platform: string) => {
           border: 1px solid #777071;
           border-radius: 999px;
           outline: none;
+          background: #514749;
         }
 
         .referral-range::-webkit-slider-thumb {

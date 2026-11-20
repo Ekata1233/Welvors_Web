@@ -1,6 +1,13 @@
+
 export const DOWNLOAD_LINKS = [
-  { label: "Google Play", href: "/#download" },
-  { label: "App Store", href: "/#download" },
+  {
+    label: "Google Play",
+    href: "https://play.google.com/store/apps/details?id=com.infynod.welvors",
+  },
+  {
+    label: "App Store",
+    href: "/#download",
+  },
 ];
 
 export const COMPANY_LINKS = [
@@ -15,16 +22,35 @@ export const LEGAL_LINKS = [
   { label: "Terms & Conditions", href: "/terms-and-conditions" },
   { label: "Cookie Policy", href: "/cookie-policy" },
   { label: "Community Guidelines", href: "/community-guidelines" },
-  { label: "Refund & Cancellation", href: "/refund-and-cancellation" },
-  { label: "Grievance Redressal", href: "/grievance-redressal" },
+  {
+    label: "Refund & Cancellation",
+    href: "/refund-and-cancellation",
+  },
+  {
+    label: "Grievance Redressal",
+    href: "/grievance-redressal",
+  },
   { label: "Age Policy", href: "/age-policy" },
-  { label: "Child Safety Policy", href: "/child-safety-policy" },
+  {
+    label: "Child Safety Policy",
+    href: "/child-safety-policy",
+  },
 ];
 
 export const SOCIAL_LINKS = [
-  { label: "IG", name: "Instagram", href: "" },
-  { label: "FB", name: "Facebook", href: "" },
-  { label: "IN", name: "LinkedIn", href: "" },
-  { label: "X", name: "X", href: "" },
-  { label: "YT", name: "YouTube", href: "" },
+  {
+    label: "IG",
+    name: "Instagram",
+    href: "",
+  },
+  {
+    label: "FB",
+    name: "Facebook",
+    href: "",
+  },
+  {
+    label: "IN",
+    name: "LinkedIn",
+    href: "",
+  },
 ];

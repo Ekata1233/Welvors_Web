@@ -7,7 +7,7 @@ const BANNER_IMAGE =
   "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1800&q=85";
 
 const APP_STORE_URL = "https://www.apple.com/app-store/";
-const GOOGLE_PLAY_URL = "https://play.google.com/store";
+const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.infynod.welvors";
 
 /* ========================================================
    DOWNLOAD APP SECTION

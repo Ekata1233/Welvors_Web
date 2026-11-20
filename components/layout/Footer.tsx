@@ -1,17 +1,49 @@
+
 import Link from "next/link";
+
+
 import {
   DOWNLOAD_LINKS,
   COMPANY_LINKS,
   LEGAL_LINKS,
   SOCIAL_LINKS,
 } from "@/constants/footer";
+import {  FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 
 type FooterLink = {
   label: string;
   href: string;
 };
 
-// Reusable footer link section
+/* ==========================================================
+   SOCIAL ICON COMPONENT
+   ========================================================== */
+
+function SocialIcon({ name }: { name: string }) {
+  const iconProps = {
+    size: 19,
+    strokeWidth: 1.8,
+  };
+
+  switch (name) {
+    case "Instagram":
+      return <FaInstagram {...iconProps} />;
+
+    case "Facebook":
+      return <FaFacebook {...iconProps} />;
+
+    case "LinkedIn":
+      return <FaLinkedin {...iconProps} />;
+
+    default:
+      return null;
+  }
+}
+
+/* ==========================================================
+   REUSABLE FOOTER LINK SECTION
+   ========================================================== */
+
 function FooterLinkSection({
   title,
   links,
@@ -41,6 +73,10 @@ function FooterLinkSection({
   );
 }
 
+/* ==========================================================
+   FOOTER COMPONENT
+   ========================================================== */
+
 export default async function Footer() {
   "use cache";
 
@@ -50,10 +86,12 @@ export default async function Footer() {
     <footer className="w-full bg-[#1C1819] text-[#A9A3A4]">
       <div className="mx-auto max-w-[1280px] px-6 pb-7 pt-16 lg:pt-[68px]">
 
-        {/* Footer Main Content */}
+        {/* FOOTER MAIN CONTENT */}
+
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.15fr] lg:gap-12">
 
-          {/* Brand Section */}
+          {/* BRAND SECTION */}
+
           <div>
             <Link
               href="/"
@@ -80,8 +118,9 @@ export default async function Footer() {
               CIN U62020PN2026PTC258333
             </p>
 
-            {/* Social Media Links */}
-            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+            {/* SOCIAL MEDIA ICONS */}
+
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               {SOCIAL_LINKS.map((social) =>
                 social.href ? (
                   <a
@@ -90,24 +129,27 @@ export default async function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={social.name}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#484344] text-[13px] font-semibold text-[#D2CCCD] transition-colors duration-200 hover:border-[#D0476B] hover:bg-[#D0476B] hover:text-white"
+                    title={social.name}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-[#484344] text-[#D2CCCD] transition-all duration-300 hover:-translate-y-1 hover:border-[#D0476B] hover:bg-[#D0476B] hover:text-white"
                   >
-                    {social.label}
+                    <SocialIcon name={social.name} />
                   </a>
                 ) : (
                   <span
                     key={social.name}
-                    title={social.name}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#484344] text-[13px] font-semibold text-[#D2CCCD]"
+                    aria-label={social.name}
+                    title={`${social.name} — coming soon`}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-[#484344] text-[#D2CCCD]"
                   >
-                    {social.label}
+                    <SocialIcon name={social.name} />
                   </span>
                 )
               )}
             </div>
           </div>
 
-          {/* Download and Support Section */}
+          {/* DOWNLOAD AND SUPPORT SECTION */}
+
           <div>
             <FooterLinkSection
               title="Download App"
@@ -128,29 +170,30 @@ export default async function Footer() {
             </div>
           </div>
 
-          {/* Company Section */}
+          {/* COMPANY SECTION */}
+
           <FooterLinkSection
             title="Company"
             links={COMPANY_LINKS}
           />
 
-          {/* Legal and Safety Section */}
+          {/* LEGAL AND SAFETY SECTION */}
+
           <FooterLinkSection
             title="Legal & Safety"
             links={LEGAL_LINKS}
           />
         </div>
 
-        {/* Footer Bottom */}
-        <div className="mt-12 flex flex-col gap-3 border-t border-[#3B3536] pt-6 text-[14px] text-[#969091] md:flex-row md:items-center md:justify-between">
+        {/* FOOTER BOTTOM */}
 
+        <div className="mt-12 flex flex-col gap-3 border-t border-[#3B3536] pt-6 text-[14px] text-[#969091] md:flex-row md:items-center md:justify-between">
           <p>
             © {currentYear} Infynod Tech Private Limited.
             All rights reserved.
           </p>
 
           <p>Made with care in India.</p>
-
         </div>
       </div>
     </footer>

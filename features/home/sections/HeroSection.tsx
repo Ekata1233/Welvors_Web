@@ -202,7 +202,7 @@ export default function HeroSection() {
               {/* Google Play */}
 
               <a
-                href="https://play.google.com/store"
+                href="https://play.google.com/store/apps/details?id=com.infynod.welvors"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex min-h-[62px] w-full items-center gap-4 rounded-[15px] bg-white px-6 py-3 text-[#202020] transition-colors hover:bg-[#FFF1F5] lg:w-[175px] lg:gap-3 lg:px-4"

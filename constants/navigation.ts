@@ -4,19 +4,23 @@ export const NAV_LINKS = [
     href: "/why-welvors",
   },
   {
-    label: "Verification",
-    href: "/verification",
+    label: "Trust & safety",
+    href: "/trust-and-safety",
   },
   {
-    label: "Date Now",
-    href: "/date-now",
+    label: "Date Plans",
+    href: "/date-plans",
   },
   {
     label: "Events",
     href: "/events",
   },
   {
-    label: "Commitment Mode",
-    href: "/commitment-mode",
+    label: "Packages",
+    href: "/packages",
+  },
+  {
+    label: "Wallet",
+    href: "/wallet",
   },
 ];

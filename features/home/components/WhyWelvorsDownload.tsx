@@ -131,7 +131,7 @@ export default function WhyWelvorsDownload({
         {/* GOOGLE PLAY */}
 
         <a
-          href={googlePlayUrl}
+          href="https://play.google.com/store/apps/details?id=com.infynod.welvors"
           target="_blank"
           rel="noopener noreferrer"
           className={storeButtonClass}
