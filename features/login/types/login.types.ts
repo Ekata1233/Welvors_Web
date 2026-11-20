@@ -52,14 +52,34 @@ export interface VerifyOtpData {
   };
 }
 
+
 export interface VerifyOtpResponse {
   success: boolean;
   message?: string;
-  token?: string;
+
+  data?: {
+    accessToken?: string;
+    access_token?: string;
+    token?: string;
+
+    isExistingUser?: boolean;
+
+    user?: {
+      id: string;
+      full_name?: string | null;
+      email?: string | null;
+      phone_number?: string | null;
+      account_status?: string;
+      next_step?: string | null;
+      profile_completion?: number | null;
+    };
+  };
+
   accessToken?: string;
   access_token?: string;
-  data?: VerifyOtpData;
+  token?: string;
 }
+
 
 export const GENDER_OPTIONS: {
   label: string;

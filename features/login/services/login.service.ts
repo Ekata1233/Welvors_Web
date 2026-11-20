@@ -9,27 +9,51 @@ import type {
   BasicInfoPayload,
 } from "../types/login.types";
 
-const API_BASE_URL = "https://dev-api.welvors.com/api";
-
-const TOKEN_KEY = "welvors_access_token";
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  timeout: 30000,
+  baseURL:
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "https://dev-api.welvors.com/api",
+  timeout: 15000,
 });
 
-/* -------------------------------------------------------------------------- */
-/*                                TOKEN STORAGE                               */
-/* -------------------------------------------------------------------------- */
+const TOKEN_KEY = "welvors_access_token";
+const USER_KEY = "welvors_user";
 
-export const saveToken = (token: string): void => {
-  if (typeof window === "undefined") return;
+export const AUTH_EVENT = "welvors-auth-change";
 
-  sessionStorage.setItem(TOKEN_KEY, token);
+export interface AuthUser {
+  fullName: string;
+  email?: string;
+}
+
+export interface UserDetails {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phoneNumber: string | null;
+  birthDate: string | null;
+  height: number | null;
+  gender: string | null;
+  genderOption: string | null;
+  accountStatus: string;
+  onboardingStep: string | null;
+  onboardingCompleted: boolean;
+  basicInfoCompleted: boolean;
+}
+
+export interface VerifyLoginResult {
+  isExistingUser: boolean;
+}
+
+const notifyAuthChange = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_EVENT));
+  }
 };
+
+/* -------------------------------------------------------------------------- */
+/* TOKEN                                                                      */
+/* -------------------------------------------------------------------------- */
 
 export const getToken = (): string | null => {
   if (typeof window === "undefined") return null;
@@ -37,75 +61,270 @@ export const getToken = (): string | null => {
   return sessionStorage.getItem(TOKEN_KEY);
 };
 
-export const removeToken = (): void => {
+export const saveToken = (token: string) => {
+  if (typeof window === "undefined") return;
+
+  sessionStorage.setItem(TOKEN_KEY, token);
+  notifyAuthChange();
+};
+
+export const removeToken = () => {
   if (typeof window === "undefined") return;
 
   sessionStorage.removeItem(TOKEN_KEY);
+  notifyAuthChange();
 };
 
 /* -------------------------------------------------------------------------- */
-/*                                 SEND OTP                                   */
+/* USER                                                                       */
+/* -------------------------------------------------------------------------- */
+
+export const getAuthUser = (): AuthUser | null => {
+  if (typeof window === "undefined") return null;
+
+  const value = sessionStorage.getItem(USER_KEY);
+
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value) as AuthUser;
+  } catch {
+    return null;
+  }
+};
+
+export const saveAuthUser = (user: AuthUser) => {
+  if (typeof window === "undefined") return;
+
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  notifyAuthChange();
+};
+
+export const removeAuthUser = () => {
+  if (typeof window === "undefined") return;
+
+  sessionStorage.removeItem(USER_KEY);
+  notifyAuthChange();
+};
+
+/* -------------------------------------------------------------------------- */
+/* GET USER ID FROM JWT                                                       */
+/* -------------------------------------------------------------------------- */
+
+export const getLoggedInUserId = (): string | null => {
+  const token = getToken();
+
+  if (!token) return null;
+
+  try {
+    const payloadPart = token.split(".")[1];
+
+    if (!payloadPart) return null;
+
+    const base64 = payloadPart
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
+    const decoded = atob(
+      base64.padEnd(
+        Math.ceil(base64.length / 4) * 4,
+        "="
+      )
+    );
+
+    const payload = JSON.parse(decoded) as {
+      userId?: string;
+      exp?: number;
+    };
+
+    if (
+      typeof payload.exp === "number" &&
+      payload.exp * 1000 <= Date.now()
+    ) {
+      return null;
+    }
+
+    return payload.userId || null;
+  } catch {
+    return null;
+  }
+};
+
+export const isAuthenticated = (): boolean => {
+  return Boolean(getToken() && getLoggedInUserId());
+};
+
+/* -------------------------------------------------------------------------- */
+/* LOGOUT                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export const logoutUser = () => {
+  if (typeof window === "undefined") return;
+
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+
+  notifyAuthChange();
+};
+
+/* -------------------------------------------------------------------------- */
+/* SEND OTP                                                                   */
 /* -------------------------------------------------------------------------- */
 
 export const sendLoginOtp = async (
   payload: SendOtpPayload
 ): Promise<ApiResponse> => {
-  const response = await api.post<ApiResponse>(
+  const { data } = await api.post<ApiResponse>(
     "/user/send-otp",
     payload
   );
 
-  if (!response.data.success) {
+  if (!data.success) {
     throw new Error(
-      response.data.message || "Failed to send OTP"
+      data.message || "Failed to send OTP."
     );
   }
 
-  return response.data;
+  return data;
 };
 
 /* -------------------------------------------------------------------------- */
-/*                                VERIFY OTP                                  */
+/* VERIFY OTP                                                                 */
 /* -------------------------------------------------------------------------- */
 
 export const verifyLoginOtp = async (
   payload: VerifyOtpPayload
-): Promise<VerifyOtpResponse> => {
-  const response = await api.post<VerifyOtpResponse>(
+): Promise<VerifyLoginResult> => {
+  const { data } = await api.post<VerifyOtpResponse>(
     "/user/verify-otp",
     payload
   );
 
-  if (!response.data.success) {
+  if (!data.success) {
     throw new Error(
-      response.data.message || "OTP verification failed"
+      data.message || "OTP verification failed."
     );
   }
 
-  const result = response.data;
-
-  // Supports common response structures.
   const token =
-    result.data?.accessToken ||
-    result.data?.access_token ||
-    result.data?.token ||
-    result.accessToken ||
-    result.access_token ||
-    result.token;
+    data.data?.accessToken ??
+    data.data?.access_token ??
+    data.data?.token ??
+    data.accessToken ??
+    data.access_token ??
+    data.token;
 
   if (!token) {
-    throw new Error(
-      "OTP verified, but authentication token was not found in the API response."
-    );
+    throw new Error("Access token not returned.");
   }
 
+  // Save the authenticated session.
   saveToken(token);
 
-  return result;
+  // Validate the account and populate the signed-in user details.
+  await getUserDetails();
+
+  const user = data.data?.user;
+  const isExistingUser =
+    user?.next_step === "INTERESTED_IN" ||
+    user?.next_step === "COMPLETED" ||
+    (user?.profile_completion ?? 0) > 5;
+
+  return {
+    isExistingUser,
+  };
 };
 
 /* -------------------------------------------------------------------------- */
-/*                             UPDATE BASIC INFO                              */
+/* FETCH USER DETAILS                                                         */
+/* -------------------------------------------------------------------------- */
+
+export const getUserDetails = async (): Promise<UserDetails> => {
+  const token = getToken();
+  const userId = getLoggedInUserId();
+
+  if (!token || !userId) {
+    throw new Error("Please login again.");
+  }
+
+  const { data: response } = await api.get(
+    `/user/details/${encodeURIComponent(userId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (response.success === false) {
+    throw new Error(
+      response.message || "Unable to fetch user details."
+    );
+  }
+
+  const outer = response.data ?? {};
+  const raw = outer.user ?? outer;
+
+  const fullName = raw.full_name ?? raw.fullName ?? "";
+  const email = raw.email ?? null;
+  const birthDate = raw.birth_date ?? raw.birthDate ?? null;
+  const height =
+    raw.height == null ? null : Number(raw.height);
+  const gender = raw.gender ?? null;
+  const genderOption =
+    raw.gender_option ?? raw.genderOption ?? null;
+
+  const basicInfoCompleted = Boolean(
+    fullName &&
+    email &&
+    birthDate &&
+    height !== null &&
+    Number.isFinite(height) &&
+    height > 0 &&
+    gender &&
+    genderOption
+  );
+
+  const user: UserDetails = {
+    id: raw.id ?? userId,
+    fullName,
+    email,
+    phoneNumber:
+      raw.phone_number ?? raw.phoneNumber ?? null,
+    birthDate,
+    height,
+    gender,
+    genderOption,
+    accountStatus:
+      raw.account_status ?? raw.accountStatus ?? "",
+    onboardingStep:
+      raw.onboarding_step ?? raw.onboardingStep ?? null,
+    onboardingCompleted:
+      raw.onboarding_completed === true,
+    basicInfoCompleted,
+  };
+
+  if (user.id !== userId) {
+    throw new Error("User details do not match the session.");
+  }
+
+  if (user.accountStatus !== "ACTIVE") {
+    throw new Error("Your account is not active.");
+  }
+
+  saveAuthUser({
+    fullName: user.fullName,
+    email: user.email ?? undefined,
+  });
+
+  return user;
+};
+
+/* -------------------------------------------------------------------------- */
+/* UPDATE BASIC INFO                                                          */
 /* -------------------------------------------------------------------------- */
 
 export const updateBasicInfo = async (
@@ -114,12 +333,10 @@ export const updateBasicInfo = async (
   const token = getToken();
 
   if (!token) {
-    throw new Error(
-      "Your login session is missing. Please verify your mobile number again."
-    );
+    throw new Error("Please login again.");
   }
 
-  const response = await api.patch<ApiResponse>(
+  const { data } = await api.patch<ApiResponse>(
     "/user/profile/basic-info",
     payload,
     {
@@ -129,17 +346,27 @@ export const updateBasicInfo = async (
     }
   );
 
-  if (!response.data.success) {
+  if (!data.success) {
     throw new Error(
-      response.data.message || "Failed to update basic information"
+      data.message || "Unable to update basic information."
     );
   }
 
-  return response.data;
+  const saved = (data.data ?? {}) as {
+    full_name?: string;
+    email?: string;
+  };
+
+  saveAuthUser({
+    fullName: saved.full_name ?? payload.fullName,
+    email: saved.email ?? payload.email,
+  });
+
+  return data;
 };
 
 /* -------------------------------------------------------------------------- */
-/*                                ERROR MESSAGE                               */
+/* ERROR HANDLING                                                             */
 /* -------------------------------------------------------------------------- */
 
 export const getApiErrorMessage = (
@@ -148,20 +375,22 @@ export const getApiErrorMessage = (
   if (axios.isAxiosError(error)) {
     const message = error.response?.data?.message;
 
-    if (typeof message === "string" && message) {
+    if (typeof message === "string") {
       return message;
     }
 
+    if (error.code === "ECONNABORTED") {
+      return "Request timed out. Please try again.";
+    }
+
     if (!error.response) {
-      return "Unable to connect to the server. Please try again.";
+      return "Unable to connect to the server.";
     }
 
     return `Request failed (${error.response.status}).`;
   }
 
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Something went wrong. Please try again.";
+  return error instanceof Error
+    ? error.message
+    : "Something went wrong.";
 };

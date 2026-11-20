@@ -615,7 +615,7 @@ export default function WalletPage() {
           </div>
 
           {/* Signed-in user */}
-          <div className="flex items-center gap-3 pb-1">
+          {/* <div className="flex items-center gap-3 pb-1">
             <span className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#d7446b] text-[15px] font-bold text-white">
               {WALLET_USER.initial}
             </span>
@@ -629,7 +629,7 @@ export default function WalletPage() {
                 {WALLET_USER.name}
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Wallet error */}

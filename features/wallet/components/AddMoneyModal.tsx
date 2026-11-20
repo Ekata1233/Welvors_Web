@@ -91,7 +91,7 @@ export default function AddMoneyModal({
   getToken,
   onPaymentSuccess,
 }: AddMoneyModalProps) {
-  const [amount, setAmount] = useState("297");
+  const [amount, setAmount] = useState("200");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState<

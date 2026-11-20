@@ -2,11 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ArrowRight,
-  CalendarDays,
-  UserRound,
-} from "lucide-react";
+import { ArrowRight, UserRound } from "lucide-react";
 
 import {
   updateBasicInfo,
@@ -21,13 +17,13 @@ import {
   type GenderOption,
 } from "../types/login.types";
 
-interface BasicInfoFormProps {
+interface Props {
   onCompleted: () => void;
 }
 
 export default function BasicInfoForm({
   onCompleted,
-}: BasicInfoFormProps) {
+}: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -39,18 +35,11 @@ export default function BasicInfoForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const today = new Date();
-  const maxBirthDate = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    String(today.getDate()).padStart(2, "0"),
-  ].join("-");
-
   const inputClass =
-    "h-[52px] w-full rounded-[13px] border border-[#eae3de] bg-white px-4 text-[13px] text-[#302929] outline-none focus:border-[#d7446b]";
+    "mt-2 h-[52px] w-full rounded-[14px] border border-[#eae3de] bg-white px-4 text-[14px] text-[#302929] outline-none focus:border-[#d7446b]";
 
   const labelClass =
-    "mb-2 block text-[12px] font-bold text-[#3d3533]";
+    "block text-[12px] font-bold text-[#3d3533]";
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
@@ -58,23 +47,15 @@ export default function BasicInfoForm({
     e.preventDefault();
     setError("");
 
-    if (!fullName.trim()) {
-      setError("Full name is required.");
-      return;
-    }
-
-    if (!email.trim()) {
-      setError("Email is required.");
-      return;
-    }
-
-    if (!birthDate) {
-      setError("Date of birth is required.");
-      return;
-    }
-
-    if (birthDate > maxBirthDate) {
-      setError("Date of birth cannot be in the future.");
+    if (
+      !fullName.trim() ||
+      !email.trim() ||
+      !birthDate ||
+      !height ||
+      !gender ||
+      !genderOption
+    ) {
+      setError("Please fill in all required fields.");
       return;
     }
 
@@ -82,19 +63,22 @@ export default function BasicInfoForm({
 
     if (
       !Number.isFinite(parsedHeight) ||
-      parsedHeight <= 0
+      parsedHeight <= 0 ||
+      parsedHeight > 300
     ) {
-      setError("Enter a valid height in centimeters.");
+      setError("Enter a valid height.");
       return;
     }
 
-    if (!gender) {
-      setError("Please select your gender.");
-      return;
-    }
+    const selectedDate = new Date(
+      `${birthDate}T00:00:00`
+    );
 
-    if (!genderOption) {
-      setError("Please select your gender option.");
+    if (
+      Number.isNaN(selectedDate.getTime()) ||
+      selectedDate > new Date()
+    ) {
+      setError("Enter a valid date of birth.");
       return;
     }
 
@@ -123,33 +107,25 @@ export default function BasicInfoForm({
   return (
     <div className="w-full">
       <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff0f4] text-[#d7446b]">
-        <UserRound size={27} />
+        <UserRound size={26} />
       </div>
 
-      <div className="mb-2 inline-flex rounded-full bg-[#fff0f4] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#d7446b]">
-        Step 1 · Basic Information
-      </div>
-
-      <h2 className="mt-3 font-serif text-[30px] font-bold text-[#302929] sm:text-[36px]">
+      <h2 className="font-serif text-[30px] font-bold text-[#302929] sm:text-[36px]">
         Tell us about yourself
       </h2>
 
       <p className="mt-2 text-[13px] leading-6 text-[#85776f]">
-        Let&apos;s start with a few basic details to create your
-        Welvors profile.
+        Complete your basic information to get started.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-        {/* FULL NAME */}
         <div>
           <label htmlFor="fullName" className={labelClass}>
-            Full name *
+            Full name
           </label>
 
           <input
             id="fullName"
-            type="text"
-            autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Enter your full name"
@@ -158,76 +134,61 @@ export default function BasicInfoForm({
           />
         </div>
 
-        {/* EMAIL */}
         <div>
           <label htmlFor="email" className={labelClass}>
-            Email address *
+            Email address
           </label>
 
           <input
             id="email"
             type="email"
-            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email address"
+            placeholder="Enter your email"
             className={inputClass}
             required
           />
         </div>
 
-        {/* DOB */}
-        <div>
-          <label htmlFor="birthDate" className={labelClass}>
-            Date of birth *
-          </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="birthDate" className={labelClass}>
+              Date of birth
+            </label>
 
-          <div className="relative">
             <input
               id="birthDate"
               type="date"
               value={birthDate}
+              max={new Date().toISOString().split("T")[0]}
               onChange={(e) => setBirthDate(e.target.value)}
-              max={maxBirthDate}
-              className={`${inputClass} pr-12`}
+              className={inputClass}
               required
-            />
-
-            <CalendarDays
-              size={18}
-              className="pointer-events-none absolute right-11 top-1/2 -translate-y-1/2 text-[#d7446b]"
             />
           </div>
 
-          <p className="mt-1.5 text-[10px] text-[#918680]">
-            Select your date of birth from the calendar.
-          </p>
+          <div>
+            <label htmlFor="height" className={labelClass}>
+              Height (cm)
+            </label>
+
+            <input
+              id="height"
+              type="number"
+              min={1}
+              max={300}
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+              placeholder="e.g. 165"
+              className={inputClass}
+              required
+            />
+          </div>
         </div>
 
-        {/* HEIGHT */}
-        <div>
-          <label htmlFor="height" className={labelClass}>
-            Height (cm) *
-          </label>
-
-          <input
-            id="height"
-            type="number"
-            min="1"
-            max="300"
-            step="1"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
-            placeholder="e.g. 170"
-            className={inputClass}
-            required
-          />
-        </div>
-
-        {/* GENDER */}
         <div>
           <label htmlFor="gender" className={labelClass}>
-            Gender *
+            Gender
           </label>
 
           <select
@@ -252,10 +213,9 @@ export default function BasicInfoForm({
           </select>
         </div>
 
-        {/* GENDER OPTION */}
         <div>
           <label htmlFor="genderOption" className={labelClass}>
-            Gender option *
+            Gender option
           </label>
 
           <select
@@ -269,7 +229,7 @@ export default function BasicInfoForm({
             className={inputClass}
             required
           >
-            <option value="">Select gender option</option>
+            <option value="">Select option</option>
 
             {ORIENTATION_OPTIONS.map((option) => (
               <option
@@ -283,7 +243,10 @@ export default function BasicInfoForm({
         </div>
 
         {error && (
-          <p role="alert" className="text-[12px] text-red-600">
+          <p
+            role="alert"
+            className="text-[12px] text-red-600"
+          >
             {error}
           </p>
         )}
@@ -294,7 +257,6 @@ export default function BasicInfoForm({
           className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-r from-[#ed5079] to-[#bc315f] px-5 py-4 text-[14px] font-bold text-white hover:opacity-90 disabled:opacity-60"
         >
           {loading ? "Saving..." : "Save & Continue"}
-
           {!loading && <ArrowRight size={18} />}
         </button>
       </form>
