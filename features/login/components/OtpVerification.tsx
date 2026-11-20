@@ -2,7 +2,11 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+} from "lucide-react";
 
 import {
   verifyLoginOtp,
@@ -12,7 +16,7 @@ import {
 
 interface OtpVerificationProps {
   phoneNumber: string;
-  onVerified: () => void;
+  onVerified: (isExistingUser: boolean) => void | Promise<void>;
   onBack: () => void;
 }
 
@@ -43,12 +47,12 @@ export default function OtpVerification({
     try {
       setLoading(true);
 
-      await verifyLoginOtp({
+      const result = await verifyLoginOtp({
         phoneNumber,
         otp,
       });
 
-      onVerified();
+      await onVerified(result.isExistingUser);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -101,18 +105,24 @@ export default function OtpVerification({
       </p>
 
       <form onSubmit={handleVerify} className="mt-8">
-        <label className="mb-2 block text-[12px] font-bold text-[#3d3533]">
+        <label
+          htmlFor="otp"
+          className="mb-2 block text-[12px] font-bold text-[#3d3533]"
+        >
           Verification code
         </label>
 
         <input
+          id="otp"
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
           value={otp}
           onChange={(e) => {
-            setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+            setOtp(
+              e.target.value.replace(/\D/g, "").slice(0, 6)
+            );
             setError("");
           }}
           placeholder="000000"
@@ -121,13 +131,19 @@ export default function OtpVerification({
         />
 
         {error && (
-          <p role="alert" className="mt-3 text-[12px] text-red-600">
+          <p
+            role="alert"
+            className="mt-3 text-[12px] text-red-600"
+          >
             {error}
           </p>
         )}
 
         {message && (
-          <p role="status" className="mt-3 text-[12px] text-green-700">
+          <p
+            role="status"
+            className="mt-3 text-[12px] text-green-700"
+          >
             {message}
           </p>
         )}

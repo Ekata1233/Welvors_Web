@@ -1,18 +1,17 @@
 
 import Link from "next/link";
 import Image from "next/image";
+
 import Navbar from "./Navbar";
 import MobileNavbar from "./MobileNavbar";
+import NavbarAuth from "./NavbarAuth";
 
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#EAE5E2] bg-white">
-      <div className="mx-auto flex h-[74px] w-full max-w-[1280px] items-center justify-between gap-4 px-5 sm:px-8 lg:gap-8 lg:px-10">
+      <div className="mx-auto flex h-[74px] w-full max-w-[1280px] items-center justify-between gap-4 px-5 sm:px-8 xl:gap-8 xl:px-10">
 
-        {/* Logo and Navigation */}
-        <div className="flex min-w-0 items-center gap-6 lg:gap-10">
-
-          {/* Welvors Logo */}
+        <div className="flex min-w-0 items-center gap-6 xl:gap-8">
           <Link
             href="/"
             aria-label="Welvors Home"
@@ -25,22 +24,15 @@ export default function Header() {
               height={55}
               priority
               unoptimized
-              className="h-auto w-[125px] object-contain sm:w-[145px] lg:w-[170px]"
+              className="h-auto w-[125px] object-contain sm:w-[145px] xl:w-[155px]"
             />
           </Link>
 
-          {/* Desktop Navbar */}
           <Navbar />
         </div>
 
-        {/* Desktop Action Buttons */}
-        <div className="hidden shrink-0 items-center gap-3 lg:flex">
-          <Link
-            href="/login"
-            className="rounded-full border border-[#EAE5E2] px-5 py-2.5 text-[15px] font-medium text-[#201C1D] transition-colors hover:bg-gray-50"
-          >
-            Log in
-          </Link>
+        <div className="hidden shrink-0 items-center gap-3 xl:flex">
+          <NavbarAuth />
 
           <Link
             href="/#download"
@@ -50,7 +42,6 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Mobile Navbar */}
         <MobileNavbar />
       </div>
     </header>

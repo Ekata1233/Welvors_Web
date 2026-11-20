@@ -1,64 +1,107 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Heart } from "lucide-react";
 
 import LoginForm from "./LoginForm";
 import OtpVerification from "./OtpVerification";
 import BasicInfoForm from "./BasicInfoForm";
 
-import { getToken } from "../services/login.service";
-import { useRouter } from "next/navigation";
+import { logoutUser } from "../services/login.service";
 
-type LoginStep = "phone" | "otp" | "basic-info" | "completed";
+type LoginStep =
+  | "phone"
+  | "otp"
+  | "checking"
+  | "basic-info"
+  | "completed";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [step, setStep] = useState<LoginStep>("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [initializing, setInitializing] = useState(true);
 
-  const router = useRouter();
-  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const redirectTimer = useRef<
+    ReturnType<typeof setTimeout> | null
+  >(null);
 
-  useEffect(() => {
-    // Read browser storage after the component mounts.
-    const token = getToken();
-
-    // State updates run in the async callback, avoiding
-    // the synchronous set-state-in-effect lint warning.
-    Promise.resolve().then(() => {
-      setStep(token ? "basic-info" : "phone");
-      setInitializing(false);
-    });
-  }, []);
+  /* ---------------------------------------------------------------------- */
+  /* OTP SENT                                                               */
+  /* ---------------------------------------------------------------------- */
 
   const handleOtpSent = (phone: string) => {
     setPhoneNumber(phone);
     setStep("otp");
   };
 
-  const handleVerified = () => {
+  /* ---------------------------------------------------------------------- */
+  /* OTP VERIFIED                                                           */
+  /* ---------------------------------------------------------------------- */
+
+  const handleVerified = async (
+    isExistingUser: boolean
+  ) => {
+    if (isExistingUser) {
+      // Existing user -> Direct Home.
+      setStep("checking");
+      router.replace("/");
+      return;
+    }
+
+    // New user -> Basic Info.
     setStep("basic-info");
   };
+
+  /* ---------------------------------------------------------------------- */
+  /* BASIC INFO COMPLETED                                                   */
+  /* ---------------------------------------------------------------------- */
 
   const handleBasicInfoCompleted = () => {
     setStep("completed");
 
     redirectTimer.current = setTimeout(() => {
-    router.replace("/");
-  }, 2000);
+      router.replace("/");
+    }, 1200);
   };
 
-  useEffect(() => {
-  return () => {
+  /* ---------------------------------------------------------------------- */
+  /* START AGAIN                                                            */
+  /* ---------------------------------------------------------------------- */
+
+  const handleStartAgain = () => {
     if (redirectTimer.current) {
       clearTimeout(redirectTimer.current);
     }
+
+    logoutUser();
+
+    setPhoneNumber("");
+    setStep("phone");
   };
-}, []);
+
+  /* ---------------------------------------------------------------------- */
+  /* CLEANUP                                                                */
+  /* ---------------------------------------------------------------------- */
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+      }
+    };
+  }, []);
+
+  /* ---------------------------------------------------------------------- */
+  /* UI                                                                     */
+  /* ---------------------------------------------------------------------- */
+
   return (
     <main className="min-h-screen bg-[#f8f5f2]">
       <div className="mx-auto grid min-h-[calc(100vh-90px)] w-full max-w-[1200px] items-center gap-10 px-5 py-12 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-10">
+
         {/* LEFT CONTENT */}
         <div className="hidden lg:block">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#f3d7df] bg-white px-4 py-2 text-[11px] font-bold text-[#d7446b]">
@@ -71,12 +114,14 @@ export default function LoginPage() {
             <br />
             connections
             <br />
-            <span className="italic text-[#d7446b]">begin.</span>
+            <span className="italic text-[#d7446b]">
+              begin.
+            </span>
           </h1>
 
           <p className="mt-6 max-w-[430px] text-[16px] leading-8 text-[#85776f]">
-            Meet genuine people, discover meaningful connections, and start your
-            journey with Welvors.
+            Meet genuine people, discover meaningful connections,
+            and start your journey with Welvors.
           </p>
 
           <div className="mt-8 space-y-4">
@@ -102,54 +147,72 @@ export default function LoginPage() {
         {/* RIGHT FORM */}
         <div className="w-full min-w-0">
           <div className="mx-auto w-full max-w-[480px] rounded-[24px] border border-[#eae3de] bg-white p-6 shadow-[0_16px_60px_rgba(64,40,47,0.06)] sm:p-9">
-            {initializing ? (
-              <div
-                role="status"
-                className="py-12 text-center text-[13px] text-[#85776f]"
-              >
-                Loading...
-              </div>
-            ) : step === "phone" ? (
-              <LoginForm onOtpSent={handleOtpSent} />
+
+            {step === "phone" ? (
+              <LoginForm
+                onOtpSent={handleOtpSent}
+              />
             ) : step === "otp" ? (
               <OtpVerification
                 phoneNumber={phoneNumber}
                 onVerified={handleVerified}
                 onBack={() => setStep("phone")}
               />
+            ) : step === "checking" ? (
+              <div
+                role="status"
+                className="py-12 text-center"
+              >
+                <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#f7dce5] border-t-[#d7446b]" />
+
+                <h2 className="mt-5 text-lg font-bold text-[#302929]">
+                  Login Successful!
+                </h2>
+
+                <p className="mt-2 text-sm text-[#85776f]">
+                  Redirecting to home page...
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => router.replace("/")}
+                  className="mt-5 text-sm font-semibold text-[#d7446b]"
+                >
+                  Go to Home
+                </button>
+              </div>
             ) : step === "basic-info" ? (
-              <BasicInfoForm onCompleted={handleBasicInfoCompleted} />
+              <BasicInfoForm
+                onCompleted={handleBasicInfoCompleted}
+              />
             ) : (
-  <div
-    role="status"
-    aria-live="polite"
-    className="flex flex-col items-center justify-center py-10 text-center"
-  >
-    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#eaf8ef]">
-      <CheckCircle2
-        size={42}
-        strokeWidth={2.5}
-        className="text-[#22a55a]"
-      />
-    </div>
+              <div
+                role="status"
+                className="py-10 text-center"
+              >
+                <CheckCircle2
+                  size={48}
+                  className="mx-auto text-green-600"
+                />
 
-    <h2 className="mt-6 font-serif text-[28px] font-bold text-[#302929]">
-      Profile Saved Successfully!
-    </h2>
+                <h2 className="mt-5 text-2xl font-bold text-[#302929]">
+                  Profile Saved Successfully!
+                </h2>
 
-    <p className="mt-3 text-[13px] leading-6 text-[#85776f]">
-      Your basic information has been saved successfully.
-    </p>
+                <p className="mt-3 text-sm text-[#85776f]">
+                  Redirecting to home page...
+                </p>
 
-    <p className="mt-4 text-[12px] font-semibold text-[#d7446b]">
-      Redirecting to home page...
-    </p>
+                <button
+                  type="button"
+                  onClick={() => router.replace("/")}
+                  className="mt-5 text-sm font-semibold text-[#d7446b]"
+                >
+                  Go to Home
+                </button>
+              </div>
+            )}
 
-    <div className="mt-5 h-1 w-32 overflow-hidden rounded-full bg-[#f7dce5]">
-      <div className="h-full w-full animate-pulse rounded-full bg-[#d7446b]" />
-    </div>
-  </div>
-)}
           </div>
         </div>
       </div>
