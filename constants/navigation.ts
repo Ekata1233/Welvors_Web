@@ -1,15 +1,16 @@
 export const NAV_LINKS = [
-  {
+  
+ {
     label: "Why Welvors",
-    href: "/why-welvors",
+    href: "/#why-welvors",
   },
   {
     label: "Trust & safety",
-    href: "/trust-and-safety",
+    href: "/#trust-and-safety",
   },
   {
     label: "Date Plans",
-    href: "/date-plans",
+    href: "/#date-plans",
   },
   {
     label: "Events",
