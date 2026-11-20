@@ -25,27 +25,46 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className="min-h-screen w-full bg-[#FDFCFC]">
+
       <HeroSection />
 
       <HeroFeatureTicker />
 
-      <WhyWelvorsSection />
+      {/* WHY WELVORS */}
+      <section id="why-welvors" className="scroll-mt-24">
+        <WhyWelvorsSection />
+      </section>
 
       <HowItWorksSection />
 
-      <VerificationSection />
+      {/* TRUST & SAFETY */}
+      <section id="trust-and-safety" className="scroll-mt-24">
+        <VerificationSection />
+      </section>
+
       <SafeFaceSection />
+
       {/* <AICompatibilitySection /> */}
-      <DatePlansSection/>
-      <WelvorsEventsSection/>
-      <StandOutSection/>
-      <ForeverLoveSection/>
-      <ReferEarnSection/>
-      {/* <SafetyPrivacySection/> */}
-      <FAQSection/>
-      <DownloadAppSection/>
-      
-      
+
+      {/* DATE PLANS */}
+      <section id="date-plans" className="scroll-mt-24">
+        <DatePlansSection />
+      </section>
+
+      <WelvorsEventsSection />
+
+      <StandOutSection />
+
+      <ForeverLoveSection />
+
+      <ReferEarnSection />
+
+      {/* <SafetyPrivacySection /> */}
+
+      <FAQSection />
+
+      <DownloadAppSection />
+
     </div>
   );
 }
