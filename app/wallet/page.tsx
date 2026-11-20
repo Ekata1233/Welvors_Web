@@ -7,6 +7,8 @@ export const metadata: Metadata = {
     "Manage your Welvors wallet balance, coins, rewards and transactions.",
 };
 
+
+
 export default function Page() {
   return <WalletPage />;
 }
