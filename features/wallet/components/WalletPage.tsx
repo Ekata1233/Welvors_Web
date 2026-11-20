@@ -1,15 +1,9 @@
-
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowDown,
-  ArrowRight,
-  Check,
-  Plus,
-  X,
-} from "lucide-react";
+import { ArrowDown, ArrowRight, Plus, X } from "lucide-react";
+import { getToken } from "@/features/login/services/login.service";
 
 import {
   WALLET_USER,
@@ -18,6 +12,8 @@ import {
   WALLET_TRANSACTIONS,
   type WalletTransaction,
 } from "../constants/walletData";
+import AddMoneyModal from "./AddMoneyModal";
+import { getMyWallet, WalletData, WalletFilter, WalletTransactionApi } from "../services/wallet.service";
 
 type FilterType = "ALL" | "IN" | "OUT";
 type ModalType = "ADD" | "WITHDRAW" | null;
@@ -30,20 +26,29 @@ function formatMoney(amount: number) {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
+const handleWalletPaymentSuccess = async () => {
+  // Refresh wallet balance and transactions
+  // using your wallet details API when available.
+
+  console.log("Wallet payment verified successfully");
+};
 /* -------------------------------------------------------------------------- */
 /*                              WALLET BALANCE                                */
 /* -------------------------------------------------------------------------- */
 
 function WalletBalanceCard({
+  balance,
+  loading,
   onAddMoney,
   onWithdraw,
 }: {
+  balance: number;
+  loading: boolean;
   onAddMoney: () => void;
   onWithdraw: () => void;
 }) {
   return (
     <div className="relative overflow-hidden rounded-[25px] bg-gradient-to-br from-[#ed5276] via-[#d9426b] to-[#b92d5d] px-6 py-6 text-white shadow-[0_15px_30px_rgba(208,59,99,0.16)] sm:px-7 sm:py-7">
-      {/* Background circle */}
       <div className="pointer-events-none absolute -right-[65px] -top-[75px] h-[230px] w-[230px] rounded-full bg-white/[0.09]" />
 
       <div className="relative">
@@ -54,12 +59,16 @@ function WalletBalanceCard({
           </p>
 
           <p className="text-[10px] font-semibold text-white/90 sm:text-[11px]">
-            {WALLET_BALANCE.conversion}
+            1 coin = ₹1
           </p>
         </div>
 
         <h2 className="mt-6 font-serif text-[45px] font-normal leading-none tracking-[-1px] sm:text-[55px]">
-          {formatMoney(WALLET_BALANCE.amount)}
+          {loading ? (
+            <span className="inline-block h-[50px] w-[180px] animate-pulse rounded-lg bg-white/20" />
+          ) : (
+            formatMoney(balance)
+          )}
         </h2>
 
         <p className="mt-2 text-[12px] text-white/90 sm:text-[13px]">
@@ -109,9 +118,7 @@ function SpendCoins({
         {SPEND_OPTIONS.map((option) => {
           const content = (
             <>
-              <span className="text-[24px] leading-none">
-                {option.icon}
-              </span>
+              <span className="text-[24px] leading-none">{option.icon}</span>
 
               <span className="mt-4 block text-[13px] font-bold text-[#2f2928] sm:text-[14px]">
                 {option.title}
@@ -127,11 +134,7 @@ function SpendCoins({
             "flex min-h-[116px] flex-col items-start rounded-[17px] border border-[#e9e1dc] bg-white px-4 py-4 text-left transition hover:border-[#e7b8c4] hover:shadow-sm sm:min-h-[125px]";
 
           return option.href ? (
-            <Link
-              key={option.id}
-              href={option.href}
-              className={classes}
-            >
+            <Link key={option.id} href={option.href} className={classes}>
               {content}
             </Link>
           ) : (
@@ -172,10 +175,7 @@ function ReferralBanner() {
         </span>
       </span>
 
-      <ArrowRight
-        size={17}
-        className="shrink-0 text-[#187b4d]"
-      />
+      <ArrowRight size={17} className="shrink-0 text-[#187b4d]" />
     </Link>
   );
 }
@@ -184,20 +184,91 @@ function ReferralBanner() {
 /*                              TRANSACTION ROW                               */
 /* -------------------------------------------------------------------------- */
 
+function getTransactionIcon(source: string): {
+  icon: string;
+  background: string;
+} {
+  switch (source) {
+    case "GIFT_PURCHASE":
+      return {
+        icon: "🎁",
+        background: "bg-[#ffe7ee]",
+      };
+
+    case "WALLET_ROSE":
+      return {
+        icon: "🌹",
+        background: "bg-[#ffe7ee]",
+      };
+
+    case "WALLET_COMPLIMENT":
+      return {
+        icon: "💌",
+        background: "bg-[#ffe7ee]",
+      };
+
+    case "BOOST_PURCHASE":
+      return {
+        icon: "🚀",
+        background: "bg-[#fff3df]",
+      };
+
+    case "REFERRAL_REWARD":
+      return {
+        icon: "🎁",
+        background: "bg-[#e5f5eb]",
+      };
+
+    case "WALLET_TOPUP":
+      return {
+        icon: "➕",
+        background: "bg-[#e5f5eb]",
+      };
+
+    default:
+      return {
+        icon: "🪙",
+        background: "bg-[#f3eee9]",
+      };
+  }
+}
+
+function formatTransactionDate(date: string): string {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return date;
+  }
+
+  return parsedDate.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+}
+
 function TransactionRow({
   transaction,
 }: {
-  transaction: WalletTransaction;
+  transaction: WalletTransactionApi;
 }) {
-  const isMoneyIn = transaction.type === "IN";
+  const isMoneyIn = transaction.direction === "IN";
+
+  const transactionIcon = getTransactionIcon(
+    transaction.source
+  );
 
   return (
     <div className="flex min-h-[68px] items-center justify-between gap-3 border-b border-[#ede7e3] py-3 last:border-b-0 sm:min-h-[72px]">
       <div className="flex min-w-0 items-center gap-3">
         <div
-          className={`flex h-[43px] w-[43px] shrink-0 items-center justify-center rounded-[13px] text-[21px] ${transaction.iconBackground}`}
+          className={`flex h-[43px] w-[43px] shrink-0 items-center justify-center rounded-[13px] text-[21px] ${transactionIcon.background}`}
         >
-          {transaction.icon}
+          {transactionIcon.icon}
         </div>
 
         <div className="min-w-0">
@@ -206,18 +277,20 @@ function TransactionRow({
           </p>
 
           <p className="mt-1 text-[11px] text-[#99908b] sm:text-[12px]">
-            {transaction.date}
+            {formatTransactionDate(transaction.createdAt)}
           </p>
         </div>
       </div>
 
       <p
         className={`shrink-0 text-[13px] font-bold sm:text-[14px] ${
-          isMoneyIn ? "text-[#168248]" : "text-[#292626]"
+          isMoneyIn
+            ? "text-[#168248]"
+            : "text-[#292626]"
         }`}
       >
-        {isMoneyIn ? "+" : "−"}
-        {formatMoney(transaction.amount)}
+        {transaction.formattedAmount ||
+          `${isMoneyIn ? "+" : "−"}${formatMoney(transaction.amount)}`}
       </p>
     </div>
   );
@@ -227,16 +300,23 @@ function TransactionRow({
 /*                             TRANSACTIONS PANEL                             */
 /* -------------------------------------------------------------------------- */
 
-function TransactionsPanel() {
-  const [filter, setFilter] = useState<FilterType>("ALL");
-
-  const filteredTransactions =
-    WALLET_TRANSACTIONS.filter(
-      (transaction) =>
-        filter === "ALL" || transaction.type === filter
-    );
-
-  const filters: { label: string; value: FilterType }[] = [
+function TransactionsPanel({
+  transactions,
+  filter,
+  onFilterChange,
+  loading,
+  error,
+}: {
+  transactions: WalletTransactionApi[];
+  filter: WalletFilter;
+  onFilterChange: (filter: WalletFilter) => void;
+  loading: boolean;
+  error: string | null;
+}) {
+  const filters: {
+    label: string;
+    value: WalletFilter;
+  }[] = [
     { label: "All", value: "ALL" },
     { label: "Money in", value: "IN" },
     { label: "Money out", value: "OUT" },
@@ -254,7 +334,7 @@ function TransactionsPanel() {
             <button
               key={item.value}
               type="button"
-              onClick={() => setFilter(item.value)}
+              onClick={() => onFilterChange(item.value)}
               className={`rounded-full px-3 py-2 text-[11px] font-bold transition sm:px-3.5 sm:text-[12px] ${
                 filter === item.value
                   ? "bg-white text-[#292525] shadow-sm"
@@ -268,8 +348,30 @@ function TransactionsPanel() {
       </div>
 
       <div className="mt-4">
-        {filteredTransactions.length > 0 ? (
-          filteredTransactions.map((transaction) => (
+        {loading ? (
+          <div className="space-y-4 py-4">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="flex animate-pulse items-center gap-3"
+              >
+                <div className="h-[43px] w-[43px] rounded-[13px] bg-[#f2ece8]" />
+
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-2/3 rounded bg-[#f2ece8]" />
+                  <div className="h-2 w-1/3 rounded bg-[#f2ece8]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="py-10 text-center">
+            <p className="text-[13px] text-red-500">
+              {error}
+            </p>
+          </div>
+        ) : transactions.length > 0 ? (
+          transactions.map((transaction) => (
             <TransactionRow
               key={transaction.id}
               transaction={transaction}
@@ -302,9 +404,7 @@ function DemoModal({
 }) {
   if (!type && !title) return null;
 
-  const heading =
-    title ??
-    (type === "ADD" ? "Add money" : "Withdraw money");
+  const heading = title ?? (type === "ADD" ? "Add money" : "Withdraw money");
 
   return (
     <div
@@ -341,9 +441,8 @@ function DemoModal({
         </div>
 
         <p className="mt-3 text-[13px] leading-6 text-[#827772]">
-          This is a static Wallet page preview. The{" "}
-          {heading.toLowerCase()} feature will be connected
-          when the corresponding API is integrated.
+          This is a static Wallet page preview. The {heading.toLowerCase()}{" "}
+          feature will be connected when the corresponding API is integrated.
         </p>
 
         <button
@@ -368,6 +467,124 @@ export default function WalletPage() {
 
   const [unavailableTitle, setUnavailableTitle] =
     useState<string | null>(null);
+
+  const [walletData, setWalletData] =
+    useState<WalletData | null>(null);
+
+  const [filter, setFilter] =
+    useState<WalletFilter>("ALL");
+
+  const [walletLoading, setWalletLoading] =
+    useState(true);
+
+  const [transactionsLoading, setTransactionsLoading] =
+    useState(false);
+
+  const [walletError, setWalletError] =
+    useState<string | null>(null);
+
+  const [transactionsError, setTransactionsError] =
+    useState<string | null>(null);
+
+  /* ------------------------------------------------------------------------ */
+  /*                             FETCH WALLET                                 */
+  /* ------------------------------------------------------------------------ */
+
+  const fetchWallet = useCallback(
+    async (selectedFilter: WalletFilter = "ALL") => {
+      const token = getToken();
+
+      if (!token) {
+        throw new Error("Please log in to view your wallet.");
+      }
+
+      return getMyWallet(token, selectedFilter);
+    },
+    []
+  );
+
+  /* ------------------------------------------------------------------------ */
+  /*                           INITIAL WALLET FETCH                           */
+  /* ------------------------------------------------------------------------ */
+
+  useEffect(() => {
+    let active = true;
+
+    const loadWallet = async () => {
+      try {
+        const result = await fetchWallet("ALL");
+
+        if (!active) return;
+
+        setWalletData(result);
+        setWalletError(null);
+      } catch (error) {
+        if (!active) return;
+
+        setWalletError(
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch wallet"
+        );
+      } finally {
+        if (active) {
+          setWalletLoading(false);
+        }
+      }
+    };
+
+    void loadWallet();
+
+    return () => {
+      active = false;
+    };
+  }, [fetchWallet]);
+
+  /* ------------------------------------------------------------------------ */
+  /*                          TRANSACTION FILTER                              */
+  /* ------------------------------------------------------------------------ */
+
+  const handleFilterChange = async (
+    selectedFilter: WalletFilter
+  ) => {
+    setFilter(selectedFilter);
+    setTransactionsLoading(true);
+    setTransactionsError(null);
+
+    try {
+      const result = await fetchWallet(selectedFilter);
+
+      setWalletData(result);
+    } catch (error) {
+      setTransactionsError(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch transactions"
+      );
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
+  /* ------------------------------------------------------------------------ */
+  /*                       REFRESH AFTER PAYMENT                              */
+  /* ------------------------------------------------------------------------ */
+
+  const handleWalletPaymentSuccess = async () => {
+    try {
+      const result = await fetchWallet(filter);
+
+      setWalletData(result);
+      setWalletError(null);
+      setTransactionsError(null);
+    } catch (error) {
+      console.error("Wallet refresh failed:", error);
+
+      setWalletError(
+        "Payment verified, but wallet refresh failed. Please reload the page."
+      );
+    }
+  };
 
   const closeModal = () => {
     setModalType(null);
@@ -415,11 +632,23 @@ export default function WalletPage() {
           </div>
         </div>
 
+        {/* Wallet error */}
+        {walletError && (
+          <div
+            role="alert"
+            className="mt-5 rounded-[12px] border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600"
+          >
+            {walletError}
+          </div>
+        )}
+
         {/* Main two-column layout */}
         <div className="mt-7 grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           {/* Left column */}
           <div className="min-w-0">
             <WalletBalanceCard
+              balance={walletData?.wallet.balance ?? 0}
+              loading={walletLoading}
               onAddMoney={() => setModalType("ADD")}
               onWithdraw={() => setModalType("WITHDRAW")}
             />
@@ -433,13 +662,32 @@ export default function WalletPage() {
 
           {/* Right column */}
           <div className="min-w-0">
-            <TransactionsPanel />
+            <TransactionsPanel
+              transactions={walletData?.transactions ?? []}
+              filter={filter}
+              onFilterChange={handleFilterChange}
+              loading={walletLoading || transactionsLoading}
+              error={transactionsError}
+            />
           </div>
         </div>
       </div>
 
+      {/* Add Money Razorpay modal */}
+      <AddMoneyModal
+        open={modalType === "ADD"}
+        onClose={closeModal}
+        getToken={getToken}
+        onPaymentSuccess={handleWalletPaymentSuccess}
+      />
+
+      {/* Withdraw / unavailable feature modal */}
       <DemoModal
-        type={modalType}
+        type={
+          modalType === "WITHDRAW"
+            ? "WITHDRAW"
+            : null
+        }
         title={unavailableTitle}
         onClose={closeModal}
       />

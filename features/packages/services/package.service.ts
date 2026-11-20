@@ -29,7 +29,7 @@ interface PackageCardsResponse {
 
 export async function getPackageCards(): Promise<PackageCardApi[]> {
   const response = await fetch(
-    "https://api.welvors.com/api/package/get/cards",
+    "https://dev-api.welvors.com/api/package/get/cards",
     {
       next: { revalidate: 300 },
       headers: {

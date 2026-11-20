@@ -9,7 +9,7 @@ import type {
   BasicInfoPayload,
 } from "../types/login.types";
 
-const API_BASE_URL = "https://api.welvors.com/api";
+const API_BASE_URL = "https://dev-api.welvors.com/api";
 
 const TOKEN_KEY = "welvors_access_token";
 
