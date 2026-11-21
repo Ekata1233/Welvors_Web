@@ -70,6 +70,8 @@ export interface VerifyOtpResponse {
       email?: string | null;
       phone_number?: string | null;
       account_status?: string;
+      next_step?: string | null;
+      profile_completion?: number | null;
     };
   };
 

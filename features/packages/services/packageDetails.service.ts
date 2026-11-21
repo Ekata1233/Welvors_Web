@@ -56,7 +56,7 @@ export async function getPackageDetails(
   packageId: string
 ): Promise<PackageDetailsApi> {
   const response = await axios.get<PackageDetailsResponse>(
-    `https://api.welvors.com/api/package/get/${encodeURIComponent(packageId)}`,
+    `https://dev-api.welvors.com/api/package/get/${encodeURIComponent(packageId)}`,
     {
       headers: {
         Accept: "application/json",

@@ -12,7 +12,7 @@ import type {
 const api = axios.create({
   baseURL:
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "https://api.welvors.com/api",
+    "https://dev-api.welvors.com/api",
   timeout: 15000,
 });
 
@@ -224,14 +224,14 @@ export const verifyLoginOtp = async (
   // Save the authenticated session.
   saveToken(token);
 
-  // Fetch the logged-in user's details from database.
-  const user = await getUserDetails();
+  // Validate the account and populate the signed-in user details.
+  await getUserDetails();
 
-  // Check whether Basic Info has already been completed.
+  const user = data.data?.user;
   const isExistingUser =
-    user.basicInfoCompleted ||
-    user.onboardingStep === "BASIC_INFO" ||
-    user.onboardingCompleted;
+    user?.next_step === "INTERESTED_IN" ||
+    user?.next_step === "COMPLETED" ||
+    (user?.profile_completion ?? 0) > 5;
 
   return {
     isExistingUser,
