@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   ChevronDown,
@@ -10,7 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { AUTH_EVENT, getApiErrorMessage, getToken } from "@/features/login/services/login.service";
+import { AUTH_EVENT, getApiErrorMessage, getToken, isAuthenticated } from "@/features/login/services/login.service";
 import { loadRazorpayScript } from "@/features/wallet/services/razorpayCheckout";
 import { getMyWallet, purchasePackageWithWallet } from "@/features/wallet/services/wallet.service";
 import { createPackageOrder, verifyPayment } from "@/features/wallet/services/walletPayment.service";
@@ -514,6 +514,7 @@ function DurationPanel({
   setWalletPurchasing,
   walletBalance,
   onWalletPurchase,
+  initialPriceId,
 }: {
   pkg: PackageStyle;
   details: PackageDetailsApi | null;
@@ -521,13 +522,14 @@ function DurationPanel({
   setWalletPurchasing: (purchasing: boolean) => void;
   walletBalance: number | null;
   onWalletPurchase: () => void;
+  initialPriceId: string | null;
 }) {
-  const [selectedDuration, setSelectedDuration] = useState("");
+  const router = useRouter();
+  const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<
     "idle" | "opening" | "checkout" | "verifying" | "verified" | "walletPurchased"
   >("idle");
   const [pendingPayment, setPendingPayment] = useState<RazorpayPaymentResponse | null>(null);
-  const [needsLogin, setNeedsLogin] = useState(false);
   const [orderError, setOrderError] = useState("");
 
   const durations = [...(details?.prices ?? [])]
@@ -539,19 +541,29 @@ function DurationPanel({
     durations[0];
 
   const selected =
-    durations.find((item) => item.id === selectedDuration) ??
+    durations.find((item) => item.id === (selectedDuration ?? initialPriceId)) ??
     defaultDuration;
 
   const purchased = paymentStatus === "verified" || paymentStatus === "walletPurchased";
   const busy = walletPurchasing || (paymentStatus !== "idle" && !purchased);
   const canBuy = Boolean(selected?.id && !busy && !purchased);
 
+  const getPurchaseToken = () => {
+    const token = getToken();
+    if (token && isAuthenticated()) return token;
+
+    if (selected?.id) {
+      const query = new URLSearchParams({ package: pkg.id, priceId: selected.id });
+      router.push(`/login?${query}`);
+    }
+    return null;
+  };
+
   const handleWalletPurchase = async () => {
     if (!selected?.id || !canBuy || pendingPayment) return;
 
     setOrderError("");
-    const token = getToken();
-    setNeedsLogin(!token);
+    const token = getPurchaseToken();
     if (!token) return;
 
     setWalletPurchasing(true);
@@ -588,8 +600,7 @@ function DurationPanel({
     if (!selected?.id || !canBuy) return;
 
     setOrderError("");
-    const token = getToken();
-    setNeedsLogin(!token);
+    const token = getPurchaseToken();
     if (!token) return;
 
     if (pendingPayment) {
@@ -664,7 +675,6 @@ function DurationPanel({
                 if (active) return;
                 setSelectedDuration(duration.id);
                 setPaymentStatus("idle");
-                setNeedsLogin(false);
                 setOrderError("");
               }}
               className="relative flex w-full items-center justify-between gap-2 rounded-[12px] border px-3 py-3.5 text-left transition"
@@ -783,13 +793,6 @@ function DurationPanel({
             className="mt-3 rounded-lg bg-[#fff3f6] p-3 text-center text-[11px] leading-5 text-[#b6325b]"
           >
             Your package payment was verified.
-          </p>
-        )}
-
-        {needsLogin && (
-          <p role="status" className="mt-3 text-center text-xs text-[#b6325b]">
-            <Link href="/login" className="font-bold underline">Log in</Link>{" "}
-            to buy this package.
           </p>
         )}
 
@@ -928,8 +931,12 @@ export default function PackagesPage({
 }: {
   cards: PackageCardApi[];
 }) {
-  const [selectedPackage, setSelectedPackage] =
-    useState<PackageId>("PREMIUM");
+  const searchParams = useSearchParams();
+  const requestedPackage = cards.find(
+    (card) => card.active && card.name === searchParams.get("package")
+  )?.name;
+  const [packageSelection, setSelectedPackage] = useState<PackageId | null>(null);
+  const selectedPackage = packageSelection ?? requestedPackage ?? "PREMIUM";
 
   const [packageDetails, setPackageDetails] =
     useState<PackageDetailsApi | null>(null);
@@ -1081,6 +1088,7 @@ export default function PackagesPage({
               setWalletPurchasing={setWalletPurchasing}
               walletBalance={walletBalance}
               onWalletPurchase={() => setWalletRefresh((previous) => previous + 1)}
+              initialPriceId={requestedPackage === selectedPackage ? searchParams.get("priceId") : null}
             />
           </div>
         </div>

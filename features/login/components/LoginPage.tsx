@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Heart } from "lucide-react";
 
 import LoginForm from "./LoginForm";
@@ -20,6 +20,14 @@ type LoginStep =
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const packageName = searchParams.get("package");
+  const priceId = searchParams.get("priceId");
+  const returnToWallet = searchParams.get("action") === "add-money";
+  const destination = packageName && priceId
+    ? `/packages?${new URLSearchParams({ package: packageName, priceId })}`
+    : returnToWallet ? "/wallet?action=add-money" : "/";
+  const returnLabel = packageName && priceId ? "packages" : returnToWallet ? "wallet" : null;
 
   const [step, setStep] = useState<LoginStep>("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -47,9 +55,8 @@ export default function LoginPage() {
     isExistingUser: boolean
   ) => {
     if (isExistingUser) {
-      // Existing user -> Direct Home.
       setStep("checking");
-      router.replace("/");
+      router.replace(destination);
       return;
     }
     // New user -> Basic Info.
@@ -64,7 +71,7 @@ export default function LoginPage() {
     setStep("completed");
 
     redirectTimer.current = setTimeout(() => {
-      router.replace("/");
+      router.replace(destination);
     }, 1200);
   };
 
@@ -171,15 +178,15 @@ export default function LoginPage() {
                 </h2>
 
                 <p className="mt-2 text-sm text-[#85776f]">
-                  Redirecting to home page...
+                  {returnLabel ? `Returning to ${returnLabel}…` : "Redirecting to home page…"}
                 </p>
 
                 <button
                   type="button"
-                  onClick={() => router.replace("/")}
+                  onClick={() => router.replace(destination)}
                   className="mt-5 text-sm font-semibold text-[#d7446b]"
                 >
-                  Go to Home
+                  {returnLabel ? `Back to ${returnLabel}` : "Go to Home"}
                 </button>
               </div>
             ) : step === "basic-info" ? (
@@ -201,15 +208,15 @@ export default function LoginPage() {
                 </h2>
 
                 <p className="mt-3 text-sm text-[#85776f]">
-                  Redirecting to home page...
+                  {returnLabel ? `Returning to ${returnLabel}…` : "Redirecting to home page…"}
                 </p>
 
                 <button
                   type="button"
-                  onClick={() => router.replace("/")}
+                  onClick={() => router.replace(destination)}
                   className="mt-5 text-sm font-semibold text-[#d7446b]"
                 >
-                  Go to Home
+                  {returnLabel ? `Back to ${returnLabel}` : "Go to Home"}
                 </button>
               </div>
             )}

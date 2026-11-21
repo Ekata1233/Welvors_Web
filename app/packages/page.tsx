@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import PackagesPage from "@/features/packages/components/PackagesPage";
 import { getPackageCards, PackageCardApi } from "@/features/packages/services/package.service";
@@ -21,5 +22,5 @@ export default async function Page() {
     console.error("Package cards API error:", error);
   }
 
-  return <PackagesPage cards={cards} />;
+  return <Suspense><PackagesPage cards={cards} /></Suspense>;
 }

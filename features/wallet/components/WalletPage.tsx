@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowDown, ArrowRight, Plus, X } from "lucide-react";
-import { getToken } from "@/features/login/services/login.service";
+import { getToken, isAuthenticated } from "@/features/login/services/login.service";
 
 import {
   WALLET_USER,
@@ -462,6 +463,8 @@ function DemoModal({
 /* -------------------------------------------------------------------------- */
 
 export default function WalletPage() {
+  const router = useRouter();
+  const resumeAddMoney = useSearchParams().get("action") === "add-money";
   const [modalType, setModalType] =
     useState<ModalType>(null);
 
@@ -586,9 +589,32 @@ export default function WalletPage() {
     }
   };
 
+  const handleAddMoney = () => {
+    if (!isAuthenticated()) {
+      router.push("/login?action=add-money");
+      return;
+    }
+
+    setModalType("ADD");
+  };
+
+  useEffect(() => {
+    if (!resumeAddMoney) return;
+
+    let active = true;
+    queueMicrotask(() => {
+      if (active && isAuthenticated()) setModalType("ADD");
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [resumeAddMoney]);
+
   const closeModal = () => {
     setModalType(null);
     setUnavailableTitle(null);
+    if (resumeAddMoney) router.replace("/wallet", { scroll: false });
   };
 
   return (
@@ -649,7 +675,7 @@ export default function WalletPage() {
             <WalletBalanceCard
               balance={walletData?.wallet.balance ?? 0}
               loading={walletLoading}
-              onAddMoney={() => setModalType("ADD")}
+              onAddMoney={handleAddMoney}
               onWithdraw={() => setModalType("WITHDRAW")}
             />
 
