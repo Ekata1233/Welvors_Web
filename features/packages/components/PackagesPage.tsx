@@ -10,8 +10,9 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { getApiErrorMessage, getToken } from "@/features/login/services/login.service";
+import { AUTH_EVENT, getApiErrorMessage, getToken } from "@/features/login/services/login.service";
 import { loadRazorpayScript } from "@/features/wallet/services/razorpayCheckout";
+import { getMyWallet, purchasePackageWithWallet } from "@/features/wallet/services/wallet.service";
 import { createPackageOrder, verifyPayment } from "@/features/wallet/services/walletPayment.service";
 import type { RazorpayPaymentResponse } from "@/features/wallet/types/razorpay";
 
@@ -509,13 +510,21 @@ function FeatureSections({
 function DurationPanel({
   pkg,
   details,
+  walletPurchasing,
+  setWalletPurchasing,
+  walletBalance,
+  onWalletPurchase,
 }: {
   pkg: PackageStyle;
   details: PackageDetailsApi | null;
+  walletPurchasing: boolean;
+  setWalletPurchasing: (purchasing: boolean) => void;
+  walletBalance: number | null;
+  onWalletPurchase: () => void;
 }) {
   const [selectedDuration, setSelectedDuration] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<
-    "idle" | "opening" | "checkout" | "verifying" | "verified"
+    "idle" | "opening" | "checkout" | "verifying" | "verified" | "walletPurchased"
   >("idle");
   const [pendingPayment, setPendingPayment] = useState<RazorpayPaymentResponse | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -533,7 +542,29 @@ function DurationPanel({
     durations.find((item) => item.id === selectedDuration) ??
     defaultDuration;
 
-  const busy = paymentStatus !== "idle" && paymentStatus !== "verified";
+  const purchased = paymentStatus === "verified" || paymentStatus === "walletPurchased";
+  const busy = walletPurchasing || (paymentStatus !== "idle" && !purchased);
+  const canBuy = Boolean(selected?.id && !busy && !purchased);
+
+  const handleWalletPurchase = async () => {
+    if (!selected?.id || !canBuy || pendingPayment) return;
+
+    setOrderError("");
+    const token = getToken();
+    setNeedsLogin(!token);
+    if (!token) return;
+
+    setWalletPurchasing(true);
+    try {
+      await purchasePackageWithWallet(selected.id, token);
+      setPaymentStatus("walletPurchased");
+      onWalletPurchase();
+    } catch (error) {
+      setOrderError(getApiErrorMessage(error));
+    } finally {
+      setWalletPurchasing(false);
+    }
+  };
 
   const confirmPayment = async (payment: RazorpayPaymentResponse, token: string) => {
     setPendingPayment(payment);
@@ -554,7 +585,7 @@ function DurationPanel({
   };
 
   const handleBuy = async () => {
-    if (!selected?.id || busy || paymentStatus === "verified") return;
+    if (!selected?.id || !canBuy) return;
 
     setOrderError("");
     const token = getToken();
@@ -713,7 +744,7 @@ function DurationPanel({
 
         <button
           type="button"
-          disabled={!selected?.id || busy || paymentStatus === "verified"}
+          disabled={!canBuy}
           onClick={handleBuy}
           className={`mt-3 flex w-full items-center justify-center rounded-full bg-gradient-to-r ${pkg.buttonGradient} px-3 py-3.5 text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
         >
@@ -721,10 +752,30 @@ function DurationPanel({
           {paymentStatus === "checkout" && "Checkout open"}
           {paymentStatus === "verifying" && "Verifying payment…"}
           {paymentStatus === "verified" && "Payment verified"}
+          {paymentStatus === "walletPurchased" && `Buy ${pkg.title}`}
           {paymentStatus === "idle" && (pendingPayment
             ? "Retry verification"
             : `Buy ${pkg.title} · ${selected ? money(selected.originalPrice) : "—"}`)}
         </button>
+
+        <button
+          type="button"
+          disabled={!canBuy || pendingPayment !== null}
+          onClick={handleWalletPurchase}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-[#e9e1dd] px-3 py-3.5 text-[12px] font-bold text-[#51403c] hover:bg-[#fff7f9] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Wallet size={15} aria-hidden="true" />
+          {walletPurchasing ? "Purchasing…" : paymentStatus === "walletPurchased" ? "Purchased via Wallet" : "Buy via Wallet"}
+          {walletBalance !== null && !walletPurchasing && (
+            <span>(₹{walletBalance.toLocaleString("en-IN")})</span>
+          )}
+        </button>
+
+        {paymentStatus === "walletPurchased" && (
+          <p role="status" className="mt-3 text-center text-xs text-[#51403c]">
+            Your package was purchased using your wallet.
+          </p>
+        )}
 
         {paymentStatus === "verified" && (
           <p
@@ -738,7 +789,7 @@ function DurationPanel({
         {needsLogin && (
           <p role="status" className="mt-3 text-center text-xs text-[#b6325b]">
             <Link href="/login" className="font-bold underline">Log in</Link>{" "}
-            to create a payment order.
+            to buy this package.
           </p>
         )}
 
@@ -884,6 +935,41 @@ export default function PackagesPage({
     useState<PackageDetailsApi | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [walletPurchasing, setWalletPurchasing] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletRefresh, setWalletRefresh] = useState(0);
+
+  useEffect(() => {
+    let requestId = 0;
+    let cancelled = false;
+
+    const loadWalletBalance = async () => {
+      if (cancelled) return;
+
+      const id = ++requestId;
+      const token = getToken();
+      setWalletBalance(null);
+      if (!token) return;
+
+      try {
+        const { wallet } = await getMyWallet(token);
+        if (!cancelled && id === requestId) {
+          setWalletBalance(wallet.balance);
+        }
+      } catch {
+        // The purchase endpoint can still check the wallet when the balance lookup fails.
+      }
+    };
+
+    const refreshBalance = () => void loadWalletBalance();
+    queueMicrotask(refreshBalance);
+    window.addEventListener(AUTH_EVENT, refreshBalance);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(AUTH_EVENT, refreshBalance);
+    };
+  }, [walletRefresh]);
 
   const pkg = getPackageStyle(selectedPackage);
 
@@ -954,7 +1040,9 @@ export default function PackagesPage({
 
         <PackageTabs
           selected={selectedPackage}
-          onSelect={setSelectedPackage}
+          onSelect={(id) => {
+            if (!walletPurchasing) setSelectedPackage(id);
+          }}
           cards={cards}
         />
 
@@ -989,6 +1077,10 @@ export default function PackagesPage({
               key={pkg.id}
               pkg={pkg}
               details={selectedDetails}
+              walletPurchasing={walletPurchasing}
+              setWalletPurchasing={setWalletPurchasing}
+              walletBalance={walletBalance}
+              onWalletPurchase={() => setWalletRefresh((previous) => previous + 1)}
             />
           </div>
         </div>

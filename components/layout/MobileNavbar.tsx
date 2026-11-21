@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
 import { NAV_LINKS } from "@/constants/navigation";
+import { GOOGLE_PLAY_URL } from "@/constants/appLinks";
 import NavbarAuth from "./NavbarAuth";
 
 export default function MobileNavbar() {
@@ -46,13 +47,15 @@ export default function MobileNavbar() {
               onNavigate={closeMenu}
             />
 
-            <Link
-              href="/#download"
+            <a
+              href={GOOGLE_PLAY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={closeMenu}
               className="rounded-full bg-[#D0476B] px-5 py-3 text-center font-semibold text-white"
             >
               Download app
-            </Link>
+            </a>
           </div>
         </nav>
       )}

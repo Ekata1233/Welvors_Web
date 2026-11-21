@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { GOOGLE_PLAY_URL } from "@/constants/appLinks";
 
 import Navbar from "./Navbar";
 import MobileNavbar from "./MobileNavbar";
@@ -34,12 +35,14 @@ export default function Header() {
         <div className="hidden shrink-0 items-center gap-3 xl:flex">
           <NavbarAuth />
 
-          <Link
-            href="/#download"
+          <a
+            href={GOOGLE_PLAY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded-full bg-[#D0476B] px-5 py-2.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#B83C5D]"
           >
             Download app
-          </Link>
+          </a>
         </div>
 
         <MobileNavbar />
