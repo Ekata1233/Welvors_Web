@@ -52,7 +52,6 @@ export default function LoginPage() {
       router.replace("/");
       return;
     }
-
     // New user -> Basic Info.
     setStep("basic-info");
   };
