@@ -52,6 +52,23 @@ export interface WalletApiResponse {
   data: WalletData;
 }
 
+export async function purchasePackageWithWallet(priceId: string, token: string) {
+  const { data } = await axios.post<{ success?: boolean; message?: string }>(
+    `${API_BASE_URL}/user/package/wallet/purchase`,
+    { priceId, paymentMethod: "WALLET" },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (data?.success === false) {
+    throw new Error(data.message || "Wallet purchase failed.");
+  }
+}
+
 export const getMyWallet = async (
   token: string,
   filter: WalletFilter = "ALL"
