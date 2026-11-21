@@ -2,7 +2,9 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Set `NEXT_PUBLIC_API_BASE_URL` in the root `.env` file to the Welvors API base URL, including the `/api` prefix. Set the same variable in your deployment environment before running `next build`.
+
+Run the development server:
 
 ```bash
 npm run dev

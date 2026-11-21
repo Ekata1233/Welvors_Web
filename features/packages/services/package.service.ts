@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/api";
+
 export type PackageCardName = "PREMIUM" | "VIP" | "VIP_ELITE";
 
 export interface PackageCardFeature {
@@ -29,7 +31,7 @@ interface PackageCardsResponse {
 
 export async function getPackageCards(): Promise<PackageCardApi[]> {
   const response = await fetch(
-    "https://dev-api.welvors.com/api/package/get/cards",
+    `${getApiBaseUrl()}/package/get/cards`,
     {
       next: { revalidate: 300 },
       headers: {

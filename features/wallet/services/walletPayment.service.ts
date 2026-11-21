@@ -1,8 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "https://dev-api.welvors.com/api";
+import { getApiBaseUrl } from "@/lib/api";
 
 /* -------------------------------------------------------------------------- */
 /*                                   TYPES                                    */
@@ -56,7 +53,7 @@ export interface VerifyWalletPaymentResponse {
 /* -------------------------------------------------------------------------- */
 
 const walletApi = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },

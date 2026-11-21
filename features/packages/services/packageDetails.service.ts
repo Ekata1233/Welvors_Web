@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getApiBaseUrl } from "@/lib/api";
 
 export type PackageId = "PREMIUM" | "VIP" | "VIP_ELITE";
 export interface PackageDetailsApi {
@@ -56,7 +57,7 @@ export async function getPackageDetails(
   packageId: string
 ): Promise<PackageDetailsApi> {
   const response = await axios.get<PackageDetailsResponse>(
-    `https://dev-api.welvors.com/api/package/get/${encodeURIComponent(packageId)}`,
+    `${getApiBaseUrl()}/package/get/${encodeURIComponent(packageId)}`,
     {
       headers: {
         Accept: "application/json",

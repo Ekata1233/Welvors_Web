@@ -2,6 +2,7 @@
 import "server-only";
 
 import { cacheLife } from "next/cache";
+import { getApiBaseUrl } from "@/lib/api";
 
 import type {
   InformationPageData,
@@ -24,17 +25,7 @@ export async function getInformationPage(
   });
 
   try {
-    const baseUrl = process.env.API_BASE_URL?.trim();
-
-    // Prevent build failure if API URL is missing
-    if (!baseUrl) {
-      console.error(
-        "API_BASE_URL is not configured",
-      );
-      return null;
-    }
-
-    const apiUrl = `${baseUrl.replace(/\/+$/, "")}/legal/legal-pages/${encodeURIComponent(pageType)}`;
+    const apiUrl = `${getApiBaseUrl()}/legal/legal-pages/${encodeURIComponent(pageType)}`;
 
     const response = await fetch(apiUrl, {
       method: "GET",

@@ -1,5 +1,6 @@
 
 import axios from "axios";
+import { getApiBaseUrl } from "@/lib/api";
 
 import type {
   ApiResponse,
@@ -10,9 +11,7 @@ import type {
 } from "../types/login.types";
 
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "https://dev-api.welvors.com/api",
+  baseURL: getApiBaseUrl(),
   timeout: 15000,
 });
 

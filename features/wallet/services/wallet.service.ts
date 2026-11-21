@@ -1,8 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "https://dev-api.welvors.com/api";
+import { getApiBaseUrl } from "@/lib/api";
 
 export type WalletFilter = "ALL" | "IN" | "OUT";
 
@@ -54,7 +51,7 @@ export interface WalletApiResponse {
 
 export async function purchasePackageWithWallet(priceId: string, token: string) {
   const { data } = await axios.post<{ success?: boolean; message?: string }>(
-    `${API_BASE_URL}/user/package/wallet/purchase`,
+    `${getApiBaseUrl()}/user/package/wallet/purchase`,
     { priceId, paymentMethod: "WALLET" },
     {
       headers: {
@@ -74,7 +71,7 @@ export const getMyWallet = async (
   filter: WalletFilter = "ALL"
 ): Promise<WalletData> => {
   const response = await axios.get<WalletApiResponse>(
-    `${API_BASE_URL}/user/my-wallet`,
+    `${getApiBaseUrl()}/user/my-wallet`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
