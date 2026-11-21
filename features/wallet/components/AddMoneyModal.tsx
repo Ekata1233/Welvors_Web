@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Loader2, Wallet } from "lucide-react";
 import axios from "axios";
+import { loadRazorpayScript } from "../services/razorpayCheckout";
 
 import {
   createWalletOrder,
@@ -39,52 +40,6 @@ function getErrorMessage(error: unknown): string {
   return "Something went wrong";
 }
 
-function loadRazorpayScript(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined") {
-      resolve(false);
-      return;
-    }
-
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const existing = document.querySelector<HTMLScriptElement>(
-      'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
-    );
-
-    if (existing) {
-      existing.addEventListener(
-        "load",
-        () => resolve(Boolean(window.Razorpay)),
-        { once: true }
-      );
-
-      existing.addEventListener(
-        "error",
-        () => resolve(false),
-        { once: true }
-      );
-
-      return;
-    }
-
-    const script = document.createElement("script");
-
-    script.src =
-      "https://checkout.razorpay.com/v1/checkout.js";
-
-    script.async = true;
-
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-
-    document.body.appendChild(script);
-  });
-}
-
 export default function AddMoneyModal({
   open,
   onClose,
@@ -101,12 +56,8 @@ export default function AddMoneyModal({
   if (!open) return null;
 
   const handlePayment = async () => {
-     const token = getToken();
-
-  if (!token) {
-    setError("Please log in to add money.");
-    return;
-  }
+    if (loading) return;
+    const token = getToken();
 
     const numericAmount = Number(amount);
 
@@ -156,6 +107,7 @@ export default function AddMoneyModal({
         orderResponse;
 
       const orderId =
+        orderData.razorpayOrderId ??
         orderData.razorpay_order_id ??
         orderData.orderId ??
         orderData.id;
@@ -170,6 +122,9 @@ export default function AddMoneyModal({
       }
 
       const razorpayKey =
+        orderData.razorpayKeyId ??
+        orderData.keyId ??
+        orderData.key ??
         process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
       if (!razorpayKey) {
@@ -180,6 +135,7 @@ export default function AddMoneyModal({
 
       /* 2. Open Razorpay */
 
+      let paymentReceived = false;
       const options: RazorpayOptions = {
         key: razorpayKey,
 
@@ -208,6 +164,8 @@ export default function AddMoneyModal({
         handler: async (
           response: RazorpayPaymentResponse
         ) => {
+          if (paymentReceived) return;
+          paymentReceived = true;
           setStatus("VERIFYING");
           setLoading(true);
 
@@ -240,6 +198,7 @@ export default function AddMoneyModal({
 
             await onPaymentSuccess?.();
           } catch (verifyError) {
+            setStatus("IDLE");
             setError(
               getErrorMessage(verifyError) +
                 " If money was deducted, check your wallet before retrying."
@@ -251,7 +210,7 @@ export default function AddMoneyModal({
 
         modal: {
           ondismiss: () => {
-            setLoading(false);
+            if (!paymentReceived) setLoading(false);
           },
         },
       };
@@ -261,6 +220,7 @@ export default function AddMoneyModal({
       razorpay.on(
         "payment.failed",
         (failure: unknown) => {
+          if (paymentReceived) return;
           const failureMessage =
             typeof failure === "object" &&
             failure !== null &&
@@ -269,12 +229,10 @@ export default function AddMoneyModal({
               : "Payment failed.";
 
           setError(failureMessage);
-          setLoading(false);
         }
       );
 
       razorpay.open();
-      setLoading(false);
     } catch (paymentError) {
       setError(getErrorMessage(paymentError));
       setLoading(false);

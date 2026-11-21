@@ -67,9 +67,17 @@ export default function ProfilePage() {
   const formatDate = (value: string | null) => {
     if (!value) return "Not provided";
 
-    const date = new Date(value);
+    // The details API can return DD-MM-YYYY, which Date may read as MM-DD-YYYY.
+    const dayFirst = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
+    const isoDate = dayFirst
+      ? `${dayFirst[3]}-${dayFirst[2]}-${dayFirst[1]}`
+      : value;
+    const date = new Date(isoDate);
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+      Number.isNaN(date.getTime()) ||
+      (dayFirst && date.toISOString().slice(0, 10) !== isoDate)
+    ) {
       return value;
     }
 

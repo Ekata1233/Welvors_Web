@@ -13,7 +13,14 @@ export interface CreateWalletOrderPayload {
   amount: number;
 }
 
+interface CreatePackageOrderPayload {
+  purpose: "PACKAGE";
+  packagePriceId: string;
+}
+
 export interface RazorpayOrderData {
+  razorpayOrderId?: string;
+  razorpayKeyId?: string;
   id?: string;
   orderId?: string;
   razorpay_order_id?: string;
@@ -24,17 +31,11 @@ export interface RazorpayOrderData {
   [key: string]: unknown;
 }
 
-export interface CreateWalletOrderResponse {
+export interface CreateWalletOrderResponse extends RazorpayOrderData {
   success?: boolean;
   message?: string;
   data?: RazorpayOrderData;
   order?: RazorpayOrderData;
-  id?: string;
-  orderId?: string;
-  razorpay_order_id?: string;
-  amount?: number;
-  currency?: string;
-  [key: string]: unknown;
 }
 
 export interface VerifyWalletPaymentPayload {
@@ -66,15 +67,10 @@ const walletApi = axios.create({
 /*                                CREATE ORDER                                */
 /* -------------------------------------------------------------------------- */
 
-export const createWalletOrder = async (
-  amount: number,
+const createPaymentOrder = async (
+  payload: CreateWalletOrderPayload | CreatePackageOrderPayload,
   token: string
 ): Promise<CreateWalletOrderResponse> => {
-  const payload: CreateWalletOrderPayload = {
-    purpose: "WALLET",
-    amount,
-  };
-
   const response =
     await walletApi.post<CreateWalletOrderResponse>(
       "/payment/create-order",
@@ -89,11 +85,17 @@ export const createWalletOrder = async (
   return response.data;
 };
 
+export const createWalletOrder = (amount: number, token: string) =>
+  createPaymentOrder({ purpose: "WALLET", amount }, token);
+
+export const createPackageOrder = (packagePriceId: string, token: string) =>
+  createPaymentOrder({ purpose: "PACKAGE", packagePriceId }, token);
+
 /* -------------------------------------------------------------------------- */
 /*                               VERIFY PAYMENT                               */
 /* -------------------------------------------------------------------------- */
 
-export const verifyWalletPayment = async (
+export const verifyPayment = async (
   payload: VerifyWalletPaymentPayload,
   token: string
 ): Promise<VerifyWalletPaymentResponse> => {
@@ -110,3 +112,5 @@ export const verifyWalletPayment = async (
 
   return response.data;
 };
+
+export const verifyWalletPayment = verifyPayment;

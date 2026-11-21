@@ -78,7 +78,7 @@ export default function LoginPage() {
       clearTimeout(redirectTimer.current);
     }
 
-    logoutUser();
+    void logoutUser();
 
     setPhoneNumber("");
     setStep("phone");
