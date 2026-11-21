@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Heart } from "lucide-react";
+import EventComingSoonButton from "./EventComingSoonButton";
 
 import type { TrendingEvent } from "../types/event.types";
 
@@ -31,11 +31,9 @@ export default function TrendingEventCard({
       {/* Gradient Overlay */}
       <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#150F11] via-black/20 via-40% to-transparent" />
 
-      {/* Event Details Link */}
-      <Link
-        href={`/events/${event.id}`}
-        aria-label={`View ${event.title}`}
-        className="absolute inset-0 z-10"
+      <EventComingSoonButton
+        title={event.title}
+        className="absolute inset-0 z-10 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
       />
 
       {/* Top Section */}

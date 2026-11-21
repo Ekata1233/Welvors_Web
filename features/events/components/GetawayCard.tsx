@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Heart, CalendarDays } from "lucide-react";
+import EventComingSoonButton from "./EventComingSoonButton";
 
 import type { Getaway } from "../types/event.types";
 
@@ -18,7 +18,7 @@ export default function GetawayCard({
   );
 
   return (
-    <article className="group flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[28px] border border-[#EAE6E2] bg-white shadow-[0_12px_30px_rgba(0,0,0,0.08),0_2px_5px_rgba(0,0,0,0.03)]">
+    <article className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[28px] border border-[#EAE6E2] bg-white shadow-[0_12px_30px_rgba(0,0,0,0.08),0_2px_5px_rgba(0,0,0,0.03)]">
 
       {/* ================= IMAGE SECTION ================= */}
       <div className="relative h-[170px] w-full shrink-0 overflow-hidden xl:h-[190px]">
@@ -54,7 +54,7 @@ export default function GetawayCard({
             onClick={() =>
               setIsFavourite((previous) => !previous)
             }
-            className="flex h-[46px] w-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/95 shadow-sm transition-all hover:bg-white active:scale-95"
+            className="relative z-20 flex h-[46px] w-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/95 shadow-sm transition-all hover:bg-white active:scale-95"
           >
             <Heart
               size={24}
@@ -207,12 +207,12 @@ export default function GetawayCard({
           </div>
 
           {/* Book Button */}
-          <Link
-            href={`/events/${getaway.id}`}
-            className="inline-flex h-[36px] shrink-0 items-center justify-center gap-1 rounded-full bg-linear-to-r from-[#EE4D78] to-[#C8325B] px-[16px] text-[14px] font-bold whitespace-nowrap text-white transition hover:opacity-90 xl:text-[16px]"
+          <EventComingSoonButton
+            title={getaway.title}
+            className="inline-flex h-[36px] shrink-0 cursor-pointer items-center justify-center gap-1 rounded-full bg-linear-to-r from-[#EE4D78] to-[#C8325B] px-[16px] text-[14px] font-bold whitespace-nowrap text-white after:absolute after:inset-0 after:z-10 xl:text-[16px]"
           >
             Book →
-          </Link>
+          </EventComingSoonButton>
 
         </div>
 
