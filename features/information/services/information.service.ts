@@ -1,3 +1,4 @@
+
 import "server-only";
 
 import { cacheLife } from "next/cache";
@@ -22,42 +23,61 @@ export async function getInformationPage(
     expire: 3600,
   });
 
-  const baseUrl = process.env.API_BASE_URL;
+  try {
+    const baseUrl = process.env.API_BASE_URL?.trim();
 
-  if (!baseUrl) {
-    throw new Error("API_BASE_URL is not configured");
-  }
+    // Prevent build failure if API URL is missing
+    if (!baseUrl) {
+      console.error(
+        "API_BASE_URL is not configured",
+      );
+      return null;
+    }
 
-  const response = await fetch(
-    `${baseUrl.replace(/\/$/, "")}/legal/legal-pages/${encodeURIComponent(pageType)}`,
-    {
+    const apiUrl = `${baseUrl.replace(/\/+$/, "")}/legal/legal-pages/${encodeURIComponent(pageType)}`;
+
+    const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         Accept: "application/json",
       },
-    },
-  );
+    });
 
-  if (response.status === 404) {
+    // Legal page not found
+    if (response.status === 404) {
+      return null;
+    }
+
+    // Handle API errors
+    if (!response.ok) {
+      console.error(
+        `Failed to fetch legal page ${pageType}: ${response.status}`,
+      );
+      return null;
+    }
+
+    const result =
+      (await response.json()) as InformationPageResponse;
+
+    // Validate response
+    if (
+      !result.success ||
+      !result.data ||
+      typeof result.data.content?.html !== "string"
+    ) {
+      console.error(
+        `Invalid API response for ${pageType}`,
+      );
+      return null;
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error(
+      `Error fetching legal page ${pageType}:`,
+      error,
+    );
+
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch page: ${response.status}`,
-    );
-  }
-
-  const result =
-    (await response.json()) as InformationPageResponse;
-
-  if (
-    !result.success ||
-    !result.data ||
-    typeof result.data.content?.html !== "string"
-  ) {
-    throw new Error("Invalid API response");
-  }
-
-  return result.data;
 }
