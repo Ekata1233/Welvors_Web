@@ -158,8 +158,10 @@ export const isAuthenticated = (): boolean => {
 /* LOGOUT                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export const logoutUser = () => {
+export const logoutUser = async () => {
   if (typeof window === "undefined") return;
+
+  const token = getToken();
 
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(USER_KEY);
@@ -168,6 +170,20 @@ export const logoutUser = () => {
   localStorage.removeItem(USER_KEY);
 
   notifyAuthChange();
+
+  if (!token) return;
+
+  try {
+    await api.post("/user/logout", undefined, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+  } catch {
+    // Local sign-out is already complete even if the server cannot be reached.
+    console.warn("Could not confirm server logout.");
+  }
 };
 
 /* -------------------------------------------------------------------------- */

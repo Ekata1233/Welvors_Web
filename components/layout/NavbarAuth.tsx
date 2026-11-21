@@ -53,7 +53,7 @@ export default function NavbarAuth({
   }, []);
 
   const handleLogout = () => {
-    logoutUser();
+    void logoutUser();
 
     setLoggedIn(false);
     setUser(null);

@@ -2,12 +2,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Check,
   ChevronDown,
   LockKeyhole,
   Wallet,
 } from "lucide-react";
+
+import { getApiErrorMessage, getToken } from "@/features/login/services/login.service";
+import { loadRazorpayScript } from "@/features/wallet/services/razorpayCheckout";
+import { createPackageOrder, verifyPayment } from "@/features/wallet/services/walletPayment.service";
+import type { RazorpayPaymentResponse } from "@/features/wallet/types/razorpay";
 
 import type { PackageCardApi } from "../services/package.service";
 import {
@@ -508,7 +514,12 @@ function DurationPanel({
   details: PackageDetailsApi | null;
 }) {
   const [selectedDuration, setSelectedDuration] = useState("");
-  const [showNotice, setShowNotice] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<
+    "idle" | "opening" | "checkout" | "verifying" | "verified"
+  >("idle");
+  const [pendingPayment, setPendingPayment] = useState<RazorpayPaymentResponse | null>(null);
+  const [needsLogin, setNeedsLogin] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   const durations = [...(details?.prices ?? [])]
     .filter((item) => item.active === true)
@@ -521,6 +532,87 @@ function DurationPanel({
   const selected =
     durations.find((item) => item.id === selectedDuration) ??
     defaultDuration;
+
+  const busy = paymentStatus !== "idle" && paymentStatus !== "verified";
+
+  const confirmPayment = async (payment: RazorpayPaymentResponse, token: string) => {
+    setPendingPayment(payment);
+    setPaymentStatus("verifying");
+    setOrderError("");
+
+    try {
+      const result = await verifyPayment(payment, token);
+      if (result.success !== true) {
+        throw new Error(result.message || "Payment verification was not confirmed.");
+      }
+      setPendingPayment(null);
+      setPaymentStatus("verified");
+    } catch (error) {
+      setPaymentStatus("idle");
+      setOrderError(getApiErrorMessage(error));
+    }
+  };
+
+  const handleBuy = async () => {
+    if (!selected?.id || busy || paymentStatus === "verified") return;
+
+    setOrderError("");
+    const token = getToken();
+    setNeedsLogin(!token);
+    if (!token) return;
+
+    if (pendingPayment) {
+      await confirmPayment(pendingPayment, token);
+      return;
+    }
+
+    setPaymentStatus("opening");
+    try {
+      if (!(await loadRazorpayScript()) || !window.Razorpay) {
+        throw new Error("Unable to load Razorpay Checkout.");
+      }
+
+      const result = await createPackageOrder(selected.id, token);
+      if (result.success !== true || !result.data) {
+        throw new Error(result.message || "Unable to create the payment order.");
+      }
+
+      const { razorpayOrderId, razorpayKeyId, amount, currency } = result.data;
+      if (!razorpayOrderId?.startsWith("order_") || !razorpayKeyId ||
+          typeof amount !== "number" || !Number.isSafeInteger(amount) || amount <= 0 || !currency) {
+        throw new Error("The server returned incomplete Razorpay order details.");
+      }
+
+      let paymentReceived = false;
+      const checkout = new window.Razorpay({
+        key: razorpayKeyId,
+        order_id: razorpayOrderId,
+        amount,
+        currency,
+        name: "Welvors",
+        description: `${pkg.title} · ${durationText(selected.months)}`,
+        theme: { color: pkg.accent },
+        handler: async ({ razorpay_payment_id, razorpay_order_id, razorpay_signature }) => {
+          if (paymentReceived) return;
+          paymentReceived = true;
+          await confirmPayment({ razorpay_payment_id, razorpay_order_id, razorpay_signature }, token);
+        },
+        modal: {
+          ondismiss: () => {
+            if (!paymentReceived) setPaymentStatus("idle");
+          },
+        },
+      });
+      checkout.on("payment.failed", () => {
+        if (!paymentReceived) setOrderError("Payment failed. You can retry in Razorpay Checkout.");
+      });
+      setPaymentStatus("checkout");
+      checkout.open();
+    } catch (error) {
+      setOrderError(getApiErrorMessage(error));
+      setPaymentStatus("idle");
+    }
+  };
 
   return (
     <aside className="rounded-[19px] border border-[#eae3de] bg-white p-4 shadow-[0_12px_28px_rgba(55,35,30,0.055)] sm:p-5">
@@ -536,9 +628,13 @@ function DurationPanel({
             <button
               key={duration.id}
               type="button"
+              disabled={busy || pendingPayment !== null}
               onClick={() => {
+                if (active) return;
                 setSelectedDuration(duration.id);
-                setShowNotice(false);
+                setPaymentStatus("idle");
+                setNeedsLogin(false);
+                setOrderError("");
               }}
               className="relative flex w-full items-center justify-between gap-2 rounded-[12px] border px-3 py-3.5 text-left transition"
               style={{
@@ -617,20 +713,38 @@ function DurationPanel({
 
         <button
           type="button"
-          disabled={!selected}
-          onClick={() => setShowNotice(true)}
+          disabled={!selected?.id || busy || paymentStatus === "verified"}
+          onClick={handleBuy}
           className={`mt-3 flex w-full items-center justify-center rounded-full bg-gradient-to-r ${pkg.buttonGradient} px-3 py-3.5 text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
         >
-          Buy {pkg.title} ·{" "}
-          {selected ? money(selected.originalPrice) : "—"}
+          {paymentStatus === "opening" && "Opening checkout…"}
+          {paymentStatus === "checkout" && "Checkout open"}
+          {paymentStatus === "verifying" && "Verifying payment…"}
+          {paymentStatus === "verified" && "Payment verified"}
+          {paymentStatus === "idle" && (pendingPayment
+            ? "Retry verification"
+            : `Buy ${pkg.title} · ${selected ? money(selected.originalPrice) : "—"}`)}
         </button>
 
-        {showNotice && (
+        {paymentStatus === "verified" && (
           <p
             role="status"
             className="mt-3 rounded-lg bg-[#fff3f6] p-3 text-center text-[11px] leading-5 text-[#b6325b]"
           >
-            Checkout will be connected when the purchase API is integrated.
+            Your package payment was verified.
+          </p>
+        )}
+
+        {needsLogin && (
+          <p role="status" className="mt-3 text-center text-xs text-[#b6325b]">
+            <Link href="/login" className="font-bold underline">Log in</Link>{" "}
+            to create a payment order.
+          </p>
+        )}
+
+        {orderError && (
+          <p role="alert" className="mt-3 text-center text-xs text-[#b6325b]">
+            {orderError}
           </p>
         )}
 
